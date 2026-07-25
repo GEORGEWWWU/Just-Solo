@@ -19,8 +19,8 @@ LyricServer::LyricServer(MusicManager *mgr, QObject *parent)
                                     QWebSocketServer::NonSecureMode, this))
     , m_progressTimer(new QTimer(this))
 {
-    // 推送间隔 200ms（可在 200~500 间调整）
-    m_progressTimer->setInterval(200);
+    // 推送间隔 300ms（可在 200~500 间调整）
+    m_progressTimer->setInterval(300);
 
     connect(m_server, &QWebSocketServer::newConnection,
             this, &LyricServer::onNewConnection);
