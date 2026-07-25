@@ -9,6 +9,8 @@
 #include <QTimer>
 #include <QRandomGenerator>
 #include <QEventLoop>
+#include <QMediaPlayer>
+#include <QAudioOutput>
 #include <QMediaMetaData>
 #include <algorithm>
 #include <QCoreApplication>
@@ -306,10 +308,8 @@ static QVariantMap buildTrack(const QString &filePath)
 MusicManager::MusicManager(QObject *parent)
     : QObject(parent)
 {
-    m_player = new QMediaPlayer(this);
-    m_audioOutput = new QAudioOutput(this);
-    m_audioOutput->setVolume(0.9);
-    m_player->setAudioOutput(m_audioOutput);
+    m_audioEngine = new AudioEngine(this);
+    m_audioEngine->setVolume(0.9f);
 
     m_loadTimer = new QTimer(this);
     m_loadTimer->setSingleShot(true);
@@ -323,16 +323,25 @@ MusicManager::MusicManager(QObject *parent)
     m_lyricTimer->setInterval(30);
     connect(m_lyricTimer, &QTimer::timeout, this, &MusicManager::updateLyricIndex);
 
-    connect(m_player, &QMediaPlayer::positionChanged, this, [this](qint64 pos) {
+    connect(m_audioEngine, &AudioEngine::positionChanged, this, [this](qint64 pos) {
         emit positionChanged(pos);
-        m_lyricTimer->start();  // 防抖，不会重复触发
+        m_lyricTimer->start();
     });
-    connect(m_player, &QMediaPlayer::playbackStateChanged, this, &MusicManager::playbackStateChanged);
-    connect(m_player, &QMediaPlayer::sourceChanged, this, &MusicManager::updateCurrentTrack);
-    connect(m_player, &QMediaPlayer::mediaStatusChanged, this, [this](QMediaPlayer::MediaStatus s) {
-        if (s == QMediaPlayer::LoadedMedia || s == QMediaPlayer::BufferedMedia) {
-            // 用真实播放时长修正列表中的 duration
-            qint64 dur = m_player ? m_player->duration() : 0;
+    connect(m_audioEngine, &AudioEngine::playbackStateChanged, this, &MusicManager::playbackStateChanged);
+    connect(m_audioEngine, &AudioEngine::endOfMedia, this, [this]() {
+        // 根据播放模式决定下一步
+        if (m_playMode == SingleLoop) {
+            m_audioEngine->play();  // 单曲循环：从头播放
+        } else if (m_playMode == StopAfter) {
+            m_audioEngine->stop();  // 关闭循环：停止
+        } else {
+            next();  // 顺序/列表循环/随机：下一首
+        }
+    });
+    // 嵌入式歌词：音源加载完成后提取
+    connect(m_audioEngine, &AudioEngine::durationChanged, this, [this]() {
+        if (m_audioEngine) {
+            qint64 dur = m_audioEngine->duration();
             if (dur > 0 && m_currentIndex >= 0 && m_currentIndex < m_playlist.size()) {
                 QVariantMap track = m_playlist[m_currentIndex].toMap();
                 int durSec = (int)(dur / 1000);
@@ -346,19 +355,9 @@ MusicManager::MusicManager(QObject *parent)
             }
             emit durationChanged();
         }
-        else if (s == QMediaPlayer::EndOfMedia) {
-            // 根据播放模式决定下一步
-            if (m_playMode == SingleLoop) {
-                m_player->play();  // 单曲循环：从头播放
-            } else if (m_playMode == StopAfter) {
-                m_player->stop();  // 关闭循环：停止
-            } else {
-                next();  // 顺序/列表循环/随机：下一首
-            }
-        }
     });
-    // 嵌入式歌词：等媒体元数据加载完成后尝试提取
-    connect(m_player, &QMediaPlayer::metaDataChanged, this, &MusicManager::onMetaDataChanged);
+    // 嵌入式歌词提取
+    connect(m_audioEngine, &AudioEngine::durationChanged, this, &MusicManager::onMetaDataChanged);
 }
 
 // ============================================================
@@ -691,7 +690,7 @@ void MusicManager::deleteCustomPlaylist(int index) {
         m_currentIndex = -1;
         m_currentCover.clear();
         m_currentAlbum.clear();
-        m_player->stop();
+        m_audioEngine->stop();
         emit playingListIndexChanged();
         emit currentIndexChanged();
         emit currentTrackChanged();
@@ -822,9 +821,13 @@ void MusicManager::processNextPending() {
                     m_library[i] = track;
                     m_playlist[i] = track;  // 同步更新播放列表中的高音质版本
                     if (m_currentIndex == i) {
-                        m_player->setSource(QUrl::fromLocalFile(track["path"].toString()));
-                        if (m_player->playbackState() == QMediaPlayer::PlayingState)
-                            m_player->play();
+                        bool wasPlaying = m_audioEngine && m_audioEngine->isPlaying();
+                        qint64 oldPos = m_audioEngine ? m_audioEngine->position() : 0;
+                        m_audioEngine->load(track["path"].toString());
+                        if (wasPlaying) {
+                            m_audioEngine->seek(oldPos);
+                            m_audioEngine->play();
+                        }
                         emit currentIndexChanged();
                     }
                     playlistModified = true;
@@ -890,7 +893,7 @@ void MusicManager::removeTrack(int index) {
     m_playlist.removeAt(index);
     if (m_currentIndex == index) {
         m_currentIndex = -1;
-        m_player->stop();
+        m_audioEngine->stop();
         emit currentIndexChanged();
     } else if (m_currentIndex > index) {
         m_currentIndex--;
@@ -919,7 +922,7 @@ void MusicManager::deleteSongByPath(const QString &path) {
                 m_playingListIndex = -1;
                 m_currentCover.clear();
                 m_currentAlbum.clear();
-                m_player->stop();
+                m_audioEngine->stop();
                 emit playingListIndexChanged();
                 emit currentIndexChanged();
                 emit currentTrackChanged();
@@ -986,7 +989,7 @@ void MusicManager::clearPlaylist() {
     m_playingListIndex = -1;
     m_currentCover.clear();            // 清空封面
     m_currentAlbum.clear();            // 清空专辑
-    m_player->stop();
+    m_audioEngine->stop();
     emit playingListIndexChanged();
     emit playlistChanged();
     emit playlistSourceChanged();
@@ -1017,13 +1020,13 @@ void MusicManager::playIndex(int index) {
         emit playingListIndexChanged();
     }
     QVariantMap track = list[index].toMap();
-    QUrl url = QUrl::fromLocalFile(track["path"].toString());
     m_currentCover = track["cover"].toString();
     m_currentAlbum = track["album"].toString();
-    m_player->setSource(url);
-    m_player->play();
+    // 更新当前曲目信息（设置 m_currentMediaPath、加载外部歌词、重置嵌入式歌词标记）
+    updateCurrentTrack();
+    m_audioEngine->load(track["path"].toString());
+    m_audioEngine->play();
     emit currentIndexChanged();
-    emit currentTrackChanged();
     addToHistory(track);
 }
 
@@ -1079,7 +1082,7 @@ void MusicManager::removeFromPlaylist(const QVariantMap &track) {
                 m_currentIndex = -1;
                 m_currentCover.clear();
                 m_currentAlbum.clear();
-                m_player->stop();
+                m_audioEngine->stop();
                 emit currentIndexChanged();
                 emit currentTrackChanged();
             } else if (m_playlistSource == 0 && m_currentIndex > i) {
@@ -1110,21 +1113,21 @@ void MusicManager::copyToPlaylist(int source) {
 void MusicManager::play() {
     QVariantList &list = currentPlaylist();
     if (m_currentIndex >= 0 && m_currentIndex < list.size()) {
-        m_player->play();
+        m_audioEngine->play();
     }
 }
 
 void MusicManager::pause() {
-    m_player->pause();
+    m_audioEngine->pause();
 }
 
 void MusicManager::stop() {
-    m_player->stop();
+    m_audioEngine->stop();
     releaseOriginalCover();
 }
 
 void MusicManager::shutdown() {
-    m_player->stop();
+    m_audioEngine->stop();
     m_loadTimer->stop();
     m_lyricTimer->stop();
     releaseOriginalCover();
@@ -1195,7 +1198,7 @@ void MusicManager::updateLyricIndex() {
         return;
     }
 
-    qint64 pos = m_player ? m_player->position() + m_lyricOffset : 0;
+    qint64 pos = m_audioEngine ? m_audioEngine->position() + m_lyricOffset : 0;
     int newIdx = -1;
 
     for (int i = 0; i < m_lyricCache.size(); i++) {
@@ -1458,7 +1461,7 @@ QVariantList MusicManager::parseEmbeddedLyrics(const QString &text) {
     } else {
         // 纯文本：按行拆分，均匀分配时间戳（基于歌曲时长）
         QStringList lines = text.split('\n', Qt::SkipEmptyParts);
-        qint64 duration = m_player ? m_player->duration() : 0;
+        qint64 duration = m_audioEngine ? m_audioEngine->duration() : 0;
         int count = lines.size();
         for (int i = 0; i < count; ++i) {
             QString trimmed = lines[i].trimmed();
@@ -1494,16 +1497,8 @@ QString MusicManager::currentAlbum() const {
     return list->at(m_currentIndex).toMap()["album"].toString();
 }
 
-qint64 MusicManager::position() const {
-    return m_player ? m_player->position() : 0;
-}
-
-qint64 MusicManager::duration() const {
-    return m_player ? m_player->duration() : 0;
-}
-
 void MusicManager::seek(qint64 ms) {
-    if (m_player) m_player->setPosition(ms);
+    if (m_audioEngine) m_audioEngine->seek(ms);
 }
 
 // ============================================================

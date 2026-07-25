@@ -6,8 +6,7 @@
 #include <QString>
 #include <QStringList>
 #include <QVector>
-#include <QMediaPlayer>
-#include <QAudioOutput>
+#include "AudioEngine.h"
 #include <QFileInfo>
 #include <QDir>
 #include <QTimer>
@@ -88,7 +87,7 @@ public:
     QVariantList favorites() const { return m_favorites; }
     QVariantList history() const { return m_history; }
     int currentIndex() const { return m_currentIndex; }
-    bool isPlaying() const { return m_player && m_player->playbackState() == QMediaPlayer::PlayingState; }
+    bool isPlaying() const { return m_audioEngine && m_audioEngine->isPlaying(); }
     bool isLoading() const { return m_loading; }
     qreal importProgress() const { return m_importTotal > 0 ? qreal(m_importProcessed) / m_importTotal : 0.0; }
     int importProcessed() const { return m_importProcessed; }
@@ -134,8 +133,8 @@ public:
     int playingListIndex() const { return m_playingListIndex; }
     QVariantList customPlaylists() const { return m_customPlaylists; }
 
-    Q_INVOKABLE qint64 position() const;
-    Q_INVOKABLE qint64 duration() const;
+    Q_INVOKABLE qint64 position() const { return m_audioEngine ? m_audioEngine->position() : 0; }
+    Q_INVOKABLE qint64 duration() const { return m_audioEngine ? m_audioEngine->duration() : 0; }
     Q_INVOKABLE void seek(qint64 ms);
 
     // ---- 播放模式 ----
@@ -254,8 +253,7 @@ private:
     // 嵌入式歌词异步加载
     bool m_embeddedLyricsLoaded = false;
 
-    QMediaPlayer *m_player = nullptr;
-    QAudioOutput *m_audioOutput = nullptr;
+    AudioEngine *m_audioEngine = nullptr;
 };
 
 #endif
