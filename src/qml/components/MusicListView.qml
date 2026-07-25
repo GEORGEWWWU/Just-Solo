@@ -44,6 +44,8 @@ ColumnLayout {
 
     // ---- 手动排序 ----
     property bool manualSortMode: false
+    property bool supportsManualSort: true       // 页面是否支持手动排序
+    property string manualSortDisabledMessage: "" // 不支持时的提示消息（为空则无反应）
     property int draggedIndex: -1
     property int dropTargetIndex: -1
     property var draggedTrack: null
@@ -473,8 +475,8 @@ ColumnLayout {
 
         // ---- 手动排序（第一位） ----
         MenuItem {
-            visible: songList.length >= 2
-            height: songList.length >= 2 ? implicitHeight : 0
+            visible: songList.length >= 2 && root.supportsManualSort
+            height: songList.length >= 2 && root.supportsManualSort ? implicitHeight : 0
             text: root.manualSortMode ? "退出排序" : "手动排序"
             contentItem: Label {
                 text: root.manualSortMode ? "退出排序" : "手动排序"
@@ -488,8 +490,29 @@ ColumnLayout {
             }
         }
         MenuSeparator {
-            visible: songList.length >= 2 && root.showDefaultContextMenu
-            height: songList.length >= 2 && root.showDefaultContextMenu ? implicitHeight : 0
+            visible: songList.length >= 2 && root.supportsManualSort && root.showDefaultContextMenu
+            height: songList.length >= 2 && root.supportsManualSort && root.showDefaultContextMenu ? implicitHeight : 0
+            contentItem: Rectangle { implicitHeight: 1; implicitWidth: 130; color: "#444466" }
+        }
+        // 不支持排序时的提示按钮
+        MenuItem {
+            visible: songList.length >= 2 && !root.supportsManualSort && root.manualSortDisabledMessage !== ""
+            height: songList.length >= 2 && !root.supportsManualSort && root.manualSortDisabledMessage !== "" ? implicitHeight : 0
+            text: "手动排序"
+            contentItem: Label {
+                text: "手动排序"
+                font.family: fontFamily; font.pixelSize: 14; color: "#666"
+                horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter
+            }
+            background: Rectangle { color: parent.hovered ? "#3a3a5a" : "transparent"; radius: 4 }
+            onClicked: {
+                manualSortTipDialog.open()
+                root.rightClickedTrack = null
+            }
+        }
+        MenuSeparator {
+            visible: songList.length >= 2 && !root.supportsManualSort && root.manualSortDisabledMessage !== "" && root.showDefaultContextMenu
+            height: songList.length >= 2 && !root.supportsManualSort && root.manualSortDisabledMessage !== "" && root.showDefaultContextMenu ? implicitHeight : 0
             contentItem: Rectangle { implicitHeight: 1; implicitWidth: 130; color: "#444466" }
         }
 
@@ -525,6 +548,24 @@ ColumnLayout {
             }
             onObjectAdded: function(index, object) { contextMenu.insertItem(contextMenu.count, object) }
             onObjectRemoved: function(index, object) { contextMenu.removeItem(object) }
+        }
+    }
+
+    // ---- 排序不支持提示弹窗 ----
+    Dialog {
+        id: manualSortTipDialog
+        parent: root.Window.contentItem
+        modal: true
+        standardButtons: Dialog.Ok
+        width: 320
+        x: (parent.width - width) / 2
+        y: (parent.height - height) / 2
+        background: Rectangle { color: "#2a2a3a"; border.color: "#444466"; radius: 8 }
+        contentItem: Label {
+            text: root.manualSortDisabledMessage
+            font.family: fontFamily; font.pixelSize: 14; color: "#c0c0c0"
+            wrapMode: Text.Wrap; topPadding: 20; bottomPadding: 10
+            leftPadding: 20; rightPadding: 20
         }
     }
 

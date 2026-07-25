@@ -1162,6 +1162,12 @@ void MusicManager::moveSongInFavorites(int from, int to) {
         }
     }
 
+    // 正在播放收藏列表时同步 m_playlist
+    if (m_playlistSource == 1) {
+        m_playlist = m_favorites;
+        emit playlistChanged();
+    }
+
     saveFavorites();
     emit favoritesChanged();
 }
@@ -1185,6 +1191,12 @@ void MusicManager::moveSongInHistory(int from, int to) {
         } else if (m_currentIndex < from && m_currentIndex >= adjustedTo) {
             m_currentIndex++;
         }
+    }
+
+    // 正在播放历史列表时同步 m_playlist
+    if (m_playlistSource == 2) {
+        m_playlist = m_history;
+        emit playlistChanged();
     }
 
     saveHistory();
@@ -1218,6 +1230,22 @@ void MusicManager::moveSongInCustomPlaylist(int playlistIndex, int from, int to)
         } else if (m_currentIndex < from && m_currentIndex >= adjustedTo) {
             m_currentIndex++;
         }
+    }
+
+    // 正在播放该自定义歌单时同步 m_playlist
+    if (m_playingListIndex == 3 + playlistIndex) {
+        QVariantList newPlaylist;
+        for (const QVariant &entry : songs) {
+            QString path = entry.toMap()["path"].toString();
+            for (const QVariant &libEntry : m_library) {
+                if (libEntry.toMap()["path"].toString() == path) {
+                    newPlaylist.append(libEntry);
+                    break;
+                }
+            }
+        }
+        m_playlist = newPlaylist;
+        emit playlistChanged();
     }
 
     saveCustomPlaylists();
