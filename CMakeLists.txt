@@ -95,6 +95,7 @@ qt_add_qml_module(JustSolo
         data/image/AddToPlayList.png
         data/image/creatList.png
         data/image/SelfList.png
+        data/image/drag.png
         data/font/HarmonyOS_Sans_SC_Regular.ttf
 )
 

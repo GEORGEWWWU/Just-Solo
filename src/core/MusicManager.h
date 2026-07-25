@@ -73,6 +73,13 @@ public:
     Q_INVOKABLE void deleteSongByPath(const QString &path);  // 从所有列表删除（库/播放列表/收藏/历史/自建）
     Q_INVOKABLE void clearPlaylist();
 
+    // ---- 手动排序 ----
+    Q_INVOKABLE void moveSongInLibrary(int from, int to);
+    Q_INVOKABLE void moveSongInFavorites(int from, int to);
+    Q_INVOKABLE void moveSongInHistory(int from, int to);
+    Q_INVOKABLE void moveSongInCustomPlaylist(int playlistIndex, int from, int to);
+    Q_INVOKABLE void moveSongInPlaylist(int from, int to);
+
     Q_INVOKABLE void playIndex(int index);
     Q_INVOKABLE void playFromLibrary(int libraryIndex); // 搜索后播放：同步播放列表=音乐库并按原序播放
     Q_INVOKABLE void play();

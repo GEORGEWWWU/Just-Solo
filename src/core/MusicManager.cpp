@@ -1110,6 +1110,152 @@ void MusicManager::copyToPlaylist(int source) {
     emit playlistSourceChanged();
 }
 
+// ============================================================
+// 手动排序
+// ============================================================
+
+void MusicManager::moveSongInLibrary(int from, int to) {
+    if (from < 0 || from >= m_library.size()) return;
+    if (to < 0 || to >= m_library.size()) return;
+    if (from == to) return;
+
+    QVariantMap item = m_library[from].toMap();
+    m_library.removeAt(from);
+    int adjustedTo = (to > from) ? to - 1 : to;
+    m_library.insert(adjustedTo, item);
+
+    if (m_playlistSource == 0) {
+        m_playlist = m_library;
+        if (m_currentIndex == from) {
+            m_currentIndex = adjustedTo;
+            emit currentIndexChanged();
+        } else if (m_currentIndex > from && m_currentIndex <= adjustedTo) {
+            m_currentIndex--;
+        } else if (m_currentIndex < from && m_currentIndex >= adjustedTo) {
+            m_currentIndex++;
+        }
+        emit playlistChanged();
+    }
+
+    saveCache();
+    emit libraryChanged();
+}
+
+void MusicManager::moveSongInFavorites(int from, int to) {
+    if (from < 0 || from >= m_favorites.size()) return;
+    if (to < 0 || to >= m_favorites.size()) return;
+    if (from == to) return;
+
+    QVariantMap item = m_favorites[from].toMap();
+    m_favorites.removeAt(from);
+    int adjustedTo = (to > from) ? to - 1 : to;
+    m_favorites.insert(adjustedTo, item);
+
+    if (m_playlistSource == 1 && m_currentIndex >= 0) {
+        if (m_currentIndex == from) {
+            m_currentIndex = adjustedTo;
+            emit currentIndexChanged();
+        } else if (m_currentIndex > from && m_currentIndex <= adjustedTo) {
+            m_currentIndex--;
+        } else if (m_currentIndex < from && m_currentIndex >= adjustedTo) {
+            m_currentIndex++;
+        }
+    }
+
+    saveFavorites();
+    emit favoritesChanged();
+}
+
+void MusicManager::moveSongInHistory(int from, int to) {
+    if (from < 0 || from >= m_history.size()) return;
+    if (to < 0 || to >= m_history.size()) return;
+    if (from == to) return;
+
+    QVariantMap item = m_history[from].toMap();
+    m_history.removeAt(from);
+    int adjustedTo = (to > from) ? to - 1 : to;
+    m_history.insert(adjustedTo, item);
+
+    if (m_playlistSource == 2 && m_currentIndex >= 0) {
+        if (m_currentIndex == from) {
+            m_currentIndex = adjustedTo;
+            emit currentIndexChanged();
+        } else if (m_currentIndex > from && m_currentIndex <= adjustedTo) {
+            m_currentIndex--;
+        } else if (m_currentIndex < from && m_currentIndex >= adjustedTo) {
+            m_currentIndex++;
+        }
+    }
+
+    saveHistory();
+    emit historyChanged();
+}
+
+void MusicManager::moveSongInCustomPlaylist(int playlistIndex, int from, int to) {
+    if (playlistIndex < 0 || playlistIndex >= m_customPlaylists.size()) return;
+
+    QVariantMap pl = m_customPlaylists[playlistIndex].toMap();
+    QVariantList songs = pl["songs"].toList();
+
+    if (from < 0 || from >= songs.size()) return;
+    if (to < 0 || to >= songs.size()) return;
+    if (from == to) return;
+
+    QVariantMap entry = songs[from].toMap();
+    songs.removeAt(from);
+    int adjustedTo = (to > from) ? to - 1 : to;
+    songs.insert(adjustedTo, entry);
+
+    pl["songs"] = songs;
+    m_customPlaylists[playlistIndex] = pl;
+
+    if (m_playingListIndex == 3 + playlistIndex && m_currentIndex >= 0) {
+        if (m_currentIndex == from) {
+            m_currentIndex = adjustedTo;
+            emit currentIndexChanged();
+        } else if (m_currentIndex > from && m_currentIndex <= adjustedTo) {
+            m_currentIndex--;
+        } else if (m_currentIndex < from && m_currentIndex >= adjustedTo) {
+            m_currentIndex++;
+        }
+    }
+
+    saveCustomPlaylists();
+    emit customPlaylistsChanged();
+}
+
+void MusicManager::moveSongInPlaylist(int from, int to) {
+    if (from < 0 || from >= m_playlist.size()) return;
+    if (to < 0 || to >= m_playlist.size()) return;
+    if (from == to) return;
+
+    QVariantMap item = m_playlist[from].toMap();
+    m_playlist.removeAt(from);
+    int adjustedTo = (to > from) ? to - 1 : to;
+    m_playlist.insert(adjustedTo, item);
+
+    if (m_playlistSource == 0 && m_currentIndex >= 0) {
+        if (m_currentIndex == from) {
+            m_currentIndex = adjustedTo;
+            emit currentIndexChanged();
+        } else if (m_currentIndex > from && m_currentIndex <= adjustedTo) {
+            m_currentIndex--;
+        } else if (m_currentIndex < from && m_currentIndex >= adjustedTo) {
+            m_currentIndex++;
+        }
+    }
+
+    // 当 source 为 0 时，播放列表即音乐库，同步更新
+    if (m_playlistSource == 0) {
+        m_library = m_playlist;
+        saveCache();
+        emit libraryChanged();
+    }
+
+    saveCache();
+    emit playlistChanged();
+}
+
 void MusicManager::play() {
     QVariantList &list = currentPlaylist();
     if (m_currentIndex >= 0 && m_currentIndex < list.size()) {

@@ -11,6 +11,12 @@ ColumnLayout {
     spacing: 0
     clip: true
 
+    // ESC 退出排序模式
+    focus: root.manualSortMode
+    Keys.onEscapePressed: {
+        if (root.manualSortMode) root.toggleSortMode()
+    }
+
     property int sidebarWidth: 230
     property int windowWidth: 1200
     property var rightClickedTrack: null
@@ -35,6 +41,54 @@ ColumnLayout {
     property var contextMenuExtra: []
     // 是否显示默认右键菜单项（收藏/取消收藏、删除此歌曲）
     property bool showDefaultContextMenu: true
+
+    // ---- 手动排序 ----
+    property bool manualSortMode: false
+    property int draggedIndex: -1
+    property int dropTargetIndex: -1
+    property var draggedTrack: null
+    property real dragOffsetY: 0       // 鼠标在拖拽行内的偏移（相对行顶）
+    property real dragOverlayY: 0      // 拖拽浮层的 Y 坐标（相对 musicListView）
+
+    // 切换手动排序模式
+    function toggleSortMode() {
+        manualSortMode = !manualSortMode
+        if (!manualSortMode) {
+            draggedIndex = -1
+            dropTargetIndex = -1
+            draggedTrack = null
+            dragOverlay.visible = false
+        }
+    }
+
+    // 根据页面上下文调用对应的 C++ 移动方法
+    function reorderSong(fromIdx, toIdx) {
+        if (fromIdx === toIdx) return
+        if (fromIdx < 0 || toIdx < 0) return
+        var list = songList
+        if (!list || fromIdx >= list.length || toIdx >= list.length) return
+
+        if (pageListIndex >= 3) {
+            musicManager.moveSongInCustomPlaylist(pageListIndex - 3, fromIdx, toIdx)
+        } else if (pageListIndex === 0) {
+            musicManager.moveSongInLibrary(fromIdx, toIdx)
+        } else if (pageListIndex === 1) {
+            musicManager.moveSongInFavorites(fromIdx, toIdx)
+        } else if (pageListIndex === 2) {
+            musicManager.moveSongInHistory(fromIdx, toIdx)
+        } else {
+            // PlaylistPage 或未设置：根据当前播放来源判断
+            var src = musicManager.playlistSource
+            if (src === 1)
+                musicManager.moveSongInFavorites(fromIdx, toIdx)
+            else if (src === 2)
+                musicManager.moveSongInHistory(fromIdx, toIdx)
+            else if (src >= 3)
+                musicManager.moveSongInCustomPlaylist(src - 3, fromIdx, toIdx)
+            else
+                musicManager.moveSongInPlaylist(fromIdx, toIdx)
+        }
+    }
 
     // 当前正在播放的歌曲路径（跨来源匹配）
     // 不受 trackCrossSource 影响，始终返回当前播放歌曲路径
@@ -81,6 +135,8 @@ ColumnLayout {
     }
 
     onVisibleChanged: {
+        // 页面不可见时自动退出排序
+        if (!visible && manualSortMode) toggleSortMode()
         if (autoScrollEnabled && visible && musicManager.currentIndex >= 0) {
             scrollToPlaying()
         }
@@ -134,6 +190,41 @@ ColumnLayout {
     }
     Rectangle { Layout.fillWidth: true; height: 1; color: "#2a2a48"; visible: songList.length > 0 }
 
+    // ---- 排序模式提示条 ----
+    Rectangle {
+        Layout.fillWidth: true
+        Layout.preferredHeight: root.manualSortMode ? 30 : 0
+        visible: root.manualSortMode
+        color: "#2a3550"
+        radius: 4
+        clip: true
+        Behavior on Layout.preferredHeight { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
+
+        RowLayout {
+            anchors.fill: parent
+            anchors.leftMargin: 12; anchors.rightMargin: 12
+            spacing: 8
+            Label {
+                text: "⇅"
+                font.family: fontFamily; font.pixelSize: 14; color: "#00d4ff"
+            }
+            Label {
+                text: "排序模式 — 拖拽歌曲行重新排序"
+                font.family: fontFamily; font.pixelSize: 12; color: "#00d4ff"
+                Layout.fillWidth: true
+            }
+            Label {
+                text: "ESC 退出"
+                font.family: fontFamily; font.pixelSize: 12; color: "#888"
+                MouseArea {
+                    anchors.fill: parent
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: root.toggleSortMode()
+                }
+            }
+        }
+    }
+
     // ---- 歌曲列表 ----
     ListView {
         id: musicListView
@@ -142,6 +233,14 @@ ColumnLayout {
         boundsBehavior: Flickable.StopAtBounds
         visible: songList.length > 0
         cacheBuffer: Math.min(height * 0.5, 400); reuseItems: true
+
+        moveDisplaced: Transition {
+            NumberAnimation { properties: "y"; duration: 250; easing.type: Easing.OutCubic }
+        }
+
+        displaced: Transition {
+            NumberAnimation { properties: "y"; duration: 220; easing.type: Easing.OutCubic }
+        }
 
         ScrollBar.vertical: ScrollBar {
             id: listScrollBar; policy: ScrollBar.AsNeeded; width: 10
@@ -166,6 +265,51 @@ ColumnLayout {
             colAlbum: root.colAlbum
             colDuration: root.colDuration
             colPlay: root.colPlay
+            sortMode: root.manualSortMode
+            isDragged: root.manualSortMode && root.draggedIndex === index
+            showDropAbove: root.manualSortMode && root.dropTargetIndex === index && root.draggedIndex !== index
+            showDropBelow: false
+
+            Behavior on opacity {
+                NumberAnimation { duration: 150; easing.type: Easing.OutCubic }
+            }
+
+            onDragStarted: function(mouseY) {
+                root.draggedIndex = index
+                root.draggedTrack = model
+                root.dragOffsetY = mouseY
+                // 计算浮层在 musicListView 内的起始 Y
+                var rowGlobal = mapToItem(musicListView, 0, 0)
+                root.dragOverlayY = rowGlobal.y
+                dragOverlay.visible = true
+            }
+            onDragMoved: function(mouseY) {
+                var posInListView = mapToItem(musicListView, 0, mouseY)
+                root.dragOverlayY = posInListView.y - root.dragOffsetY
+
+                // 计算目标索引
+                var rowHeight = 50 + musicListView.spacing  // SongRow height + spacing
+                var targetY = posInListView.y
+                var targetIdx = Math.floor((targetY + rowHeight / 2) / rowHeight)
+                targetIdx = Math.max(0, Math.min(targetIdx, musicListView.count - 1))
+                if (targetIdx !== root.dropTargetIndex) {
+                    root.dropTargetIndex = targetIdx
+                }
+            }
+            onDragEnded: {
+                var finalFrom = root.draggedIndex
+                var finalTo = root.dropTargetIndex
+                dragOverlay.visible = false
+                root.draggedIndex = -1
+                root.dropTargetIndex = -1
+                root.draggedTrack = null
+
+                if (finalFrom >= 0 && finalTo >= 0 && finalFrom !== finalTo) {
+                    root.reorderSong(finalFrom, finalTo)
+                }
+            }
+
+            opacity: (root.manualSortMode && root.draggedIndex === index) ? 0.4 : 1.0
 
             onLeftClicked: {
                 if (root.onLeftClick) {
@@ -215,6 +359,110 @@ ColumnLayout {
                 contextMenu.popup()
             }
         }
+
+        // ---- 拖拽浮层（排序模式时跟随鼠标） ----
+        Rectangle {
+            id: dragOverlay
+            z: 999
+            visible: false
+            anchors.horizontalCenter: parent.horizontalCenter
+            width: musicListView.width
+            height: 50
+            radius: 8
+            color: "#3a3a5a"
+            border.color: "#00d4ff"
+            border.width: 1.5
+            opacity: 0.95
+            y: root.dragOverlayY
+
+            Behavior on opacity {
+                NumberAnimation { duration: 120; easing.type: Easing.OutCubic }
+            }
+
+            RowLayout {
+                anchors.fill: parent
+                anchors.margins: 5
+                anchors.leftMargin: 8
+                spacing: 0
+
+                Item {
+                    Layout.preferredWidth: 28
+                    Layout.preferredHeight: parent.height
+                    Layout.alignment: Qt.AlignVCenter
+                    Image {
+                        anchors.centerIn: parent
+                        source: "qrc:/qt/qml/JustSolo/data/image/drag.png"
+                        width: 16; height: 16
+                        opacity: 1.0
+                    }
+                }
+
+                Rectangle {
+                    Layout.preferredWidth: Math.min(root.colCover, 40)
+                    Layout.preferredHeight: 40; Layout.maximumWidth: 40
+                    Layout.alignment: Qt.AlignVCenter
+                    radius: 6; color: "#4a4a65"
+                    Image {
+                        anchors.fill: parent; anchors.margins: 2
+                        sourceSize.width: 40; sourceSize.height: 40
+                        source: (root.draggedTrack && root.draggedTrack.cover) ? root.draggedTrack.cover : ""
+                        fillMode: Image.PreserveAspectCrop
+                        asynchronous: true
+                    }
+                    Label {
+                        anchors.centerIn: parent
+                        text: "\u266B"; font.family: root.fontFamily; font.pixelSize: 18; color: "#666"
+                        visible: !root.draggedTrack || !root.draggedTrack.cover || root.draggedTrack.cover === ""
+                    }
+                }
+
+                Item {
+                    Layout.fillWidth: true; Layout.preferredWidth: root.colTitle
+                    Layout.preferredHeight: 40; Layout.alignment: Qt.AlignVCenter
+                    Label {
+                        text: root.draggedTrack ? (root.draggedTrack.name || "") : ""
+                        font.family: root.fontFamily; font.pixelSize: 14; font.bold: true
+                        color: "#d4d4d4"; elide: Text.ElideRight; width: parent.width
+                        anchors.top: parent.top; anchors.left: parent.left
+                    }
+                    Rectangle {
+                        visible: root.draggedTrack && root.draggedTrack.quality && root.draggedTrack.quality !== ""
+                        width: Math.max(qualityOverlayText.contentWidth + 8, 20)
+                        height: 16; radius: 3; color: "#D4AF37"
+                        anchors.bottom: parent.bottom; anchors.left: parent.left
+                        Label {
+                            id: qualityOverlayText
+                            text: root.draggedTrack ? (root.draggedTrack.quality || "") : ""
+                            font.family: root.fontFamily; font.pixelSize: 10; font.bold: true
+                            color: "white"; anchors.centerIn: parent
+                        }
+                    }
+                }
+
+                Label {
+                    text: root.draggedTrack ? (root.draggedTrack.artist || "未知") : ""
+                    font.family: root.fontFamily; font.pixelSize: 14; color: "#969696"
+                    elide: Text.ElideRight; verticalAlignment: Text.AlignVCenter
+                    Layout.fillWidth: true; Layout.fillHeight: true; Layout.preferredWidth: root.colArtist
+                }
+
+                Label {
+                    text: root.draggedTrack ? (root.draggedTrack.album || "") : ""
+                    font.family: root.fontFamily; font.pixelSize: 14; color: "#888888"
+                    elide: Text.ElideRight; verticalAlignment: Text.AlignVCenter
+                    Layout.fillWidth: true; Layout.fillHeight: true; Layout.preferredWidth: root.colAlbum
+                }
+
+                Label {
+                    text: root.draggedTrack ? (root.draggedTrack.durationText || "") : ""
+                    font.family: root.fontFamily; font.pixelSize: 14; color: "#969696"
+                    verticalAlignment: Text.AlignVCenter; horizontalAlignment: Text.AlignRight
+                    Layout.fillHeight: true; Layout.preferredWidth: root.colDuration
+                }
+
+                Item { Layout.preferredWidth: root.colPlay; Layout.preferredHeight: 20; Layout.alignment: Qt.AlignVCenter }
+            }
+        }
     }
 
     // ---- 右键菜单 ----
@@ -222,6 +470,29 @@ ColumnLayout {
         id: contextMenu
         background: Rectangle { color: "#2a2a3a"; border.color: "#444466"; radius: 6; implicitWidth: 150 }
         topPadding: 0; bottomPadding: 0
+
+        // ---- 手动排序（第一位） ----
+        MenuItem {
+            visible: songList.length >= 2
+            height: songList.length >= 2 ? implicitHeight : 0
+            text: root.manualSortMode ? "退出排序" : "手动排序"
+            contentItem: Label {
+                text: root.manualSortMode ? "退出排序" : "手动排序"
+                font.family: fontFamily; font.pixelSize: 14; color: "#00d4ff"
+                horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter
+            }
+            background: Rectangle { color: parent.hovered ? "#3a3a5a" : "transparent"; radius: 4 }
+            onClicked: {
+                root.toggleSortMode()
+                root.rightClickedTrack = null
+            }
+        }
+        MenuSeparator {
+            visible: songList.length >= 2 && root.showDefaultContextMenu
+            height: songList.length >= 2 && root.showDefaultContextMenu ? implicitHeight : 0
+            contentItem: Rectangle { implicitHeight: 1; implicitWidth: 130; color: "#444466" }
+        }
+
         MenuItem {
             id: menuItem
             visible: root.showDefaultContextMenu
