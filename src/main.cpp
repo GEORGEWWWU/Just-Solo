@@ -4,6 +4,7 @@
 #include <QQmlContext>
 #include <QQuickStyle>
 #include <QQuickWindow>
+#include <QOpenGLContext>
 #include <QStringList>
 #include <QTimer>
 #include <QStandardPaths>
@@ -256,6 +257,17 @@ int main(int argc, char *argv[])
     // 若已有实例在运行，通知其激活窗口后本进程立即退出
     if (tryActivateRunningInstance()) {
         return 0;
+    }
+
+    // ---- GPU 可用性探测 ----
+    // 尝试创建 OpenGL 上下文检测 GPU 是否可用；若不可用（无 GPU、驱动故障、远程桌面等），
+    // 回退到软件（CPU）渲染，避免白屏或崩溃
+    {
+        QOpenGLContext probe;
+        if (!probe.create()) {
+            qWarning("GPU rendering unavailable, falling back to software (CPU) rendering");
+            qputenv("QSG_RENDERER_BACKEND", "software");
+        }
     }
 
     QQmlApplicationEngine engine;
