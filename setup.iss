@@ -5,7 +5,7 @@
 #define MyAppName "Just Solo"
 #define MyAppVersion "0.7.5"
 #define MyAppPublisher "ZZJ-JACK"
-#define MyAppURL "https://github.com/ZZJ-jack/Just-Solo"
+#define MyAppURL "https://justsolo.zzjjack.us.kg"
 #define MyAppExeName "JustSolo.exe"
 #expr EmitLanguagesSection
 

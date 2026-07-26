@@ -3,6 +3,7 @@ build/
 out/
 release/
 .workbuddy/
+.trae/
 
 # IDE
 .vs/
