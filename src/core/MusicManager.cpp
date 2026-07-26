@@ -331,7 +331,8 @@ MusicManager::MusicManager(QObject *parent)
     connect(m_audioEngine, &AudioEngine::endOfMedia, this, [this]() {
         // 根据播放模式决定下一步
         if (m_playMode == SingleLoop) {
-            m_audioEngine->play();  // 单曲循环：从头播放
+            m_audioEngine->seek(0);  // 单曲循环：先归零再播放
+            m_audioEngine->play();
         } else if (m_playMode == StopAfter) {
             m_audioEngine->stop();  // 关闭循环：停止
         } else {
