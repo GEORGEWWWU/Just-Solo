@@ -711,5 +711,6 @@ netstat -ano | findstr 47290
 
 | 版本 | 日期 | 变更 |
 |------|------|------|
-| v1.0.1 | 2026-07-25 | 修复Just Solo内置的LyricServer问题：将`progress` 推送间隔从 200ms 修正为 300ms，与协议规范保持一致 |
+| v1.0.2 | 2026-07-26 | 将`progress` 推送间隔从 300ms 变更为 400ms，修复进度更新过快问题 |
+| v1.0.1 | 2026-07-25 | 修复Just Solo内置的LyricServer问题：将`progress` 推送间隔从 200ms 更改为 300ms，修复进度更新过快问题 |
 | v1.0.0 | 2026-07-24 | 初始发布；`init`（lyrics 含 translation 字段）+ `progress`（200ms）+ `playback`（playing/paused） |
