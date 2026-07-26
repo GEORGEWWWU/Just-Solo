@@ -535,6 +535,7 @@ Rectangle {
         Item { Layout.preferredHeight: 4 }
         Label { text: "作者: ZZJ-JACK"; font.family: fontFamily; font.pixelSize: 13; color: "#999" }
         Label { text: `<a href="https://zzjjack.us.kg">https://zzjjack.us.kg</a>`; textFormat: Text.RichText; font.family: fontFamily; font.pixelSize: 13; color: "#00d4ff"; Layout.topMargin: 4; onLinkActivated: Qt.openUrlExternally(link) }
+        Label { text: `<a href="https://justsolo.zzjjack.us.kg">官方网站: https://justsolo.zzjjack.us.kg</a>`; textFormat: Text.RichText; font.family: fontFamily; font.pixelSize: 13; color: "#00d4ff"; Layout.topMargin: 4; onLinkActivated: Qt.openUrlExternally(link) }
         Item { Layout.preferredHeight: 8 }
         Label { text: "基于 Qt 6.8.3 + QML 构建"; font.family: fontFamily; font.pixelSize: 13; color: "#999" }
         Label { text: "运行环境: " + (typeof OS_VERSION !== "undefined" ? OS_VERSION : "未知"); font.family: fontFamily; font.pixelSize: 13; color: "#999" }
