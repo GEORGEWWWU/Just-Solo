@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Effects
+import QtQuick.Layouts
 
 Item {
     id: root
@@ -379,6 +380,89 @@ Item {
                 anchors.verticalCenter: parent.verticalCenter
                 Image { anchors.centerIn: parent; source: "qrc:/qt/qml/JustSolo/data/image/play.png"; width: 26; height: 26; opacity: 0.4 }
                 MouseArea { anchors.fill: parent; anchors.margins: -6; cursorShape: Qt.PointingHandCursor; onClicked: musicManager.next() }
+            }
+
+            // ---- 音量按钮 ----
+            Item {
+                id: volumeBtnDetail
+                width: 28; height: 40
+                anchors.verticalCenter: parent.verticalCenter
+
+                Image {
+                    anchors.centerIn: parent
+                    source: "qrc:/qt/qml/JustSolo/data/image/volume-logo.png"
+                    width: 24; height: 24
+                    opacity: volumeMADetail.containsMouse ? 0.9 : 0.45
+                    Behavior on opacity { NumberAnimation { duration: 100 } }
+                }
+                MouseArea {
+                    id: volumeMADetail
+                    anchors.fill: parent; anchors.margins: -6
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onEntered: { volumeLeave.stop(); volumePopupDetail.open() }
+                    onExited: volumeLeave.restart()
+                }
+
+                Timer {
+                    id: volumeLeave
+                    interval: 250
+                    onTriggered: volumePopupDetail.close()
+                }
+
+                Popup {
+                    id: volumePopupDetail
+                    x: parent.width / 2 - width / 2
+                    y: -height - 14
+                    width: 180; height: 48
+                    padding: 8
+
+                    background: Rectangle {
+                        radius: 8; color: "#2a2a48"
+                        opacity: (typeof musicManager !== "undefined" && musicManager) ? (musicManager.menuOpacity || 0.80) : 0.80
+                        border.color: "#444466"; border.width: 1
+                    }
+
+                    RowLayout {
+                        width: parent.width; height: parent.height
+                        spacing: 8
+
+                        Label {
+                            text: Math.round(musicManager.volume * 100)
+                            font.family: root.fontFamily
+                            font.pixelSize: 12
+                            color: "#aaa"
+                            Layout.preferredWidth: 28
+                            horizontalAlignment: Text.AlignRight
+                        }
+
+                        Slider {
+                            id: volumeSliderDetail
+                            Layout.fillWidth: true
+                            from: 0; to: 1; value: musicManager.volume
+                            snapMode: Slider.NoSnap
+                            live: true
+                            onMoved: musicManager.volume = value
+
+                            background: Rectangle {
+                                implicitHeight: 4; radius: 2; color: "#3a3a55"
+                                Rectangle {
+                                    width: volumeSliderDetail.visualPosition * parent.width
+                                    height: parent.height; radius: 2; color: "#00d4ff"
+                                }
+                            }
+
+                            handle: Item { }
+                        }
+
+                        Label {
+                            text: "%"
+                            font.family: root.fontFamily
+                            font.pixelSize: 12; color: "#666"
+                            Layout.preferredWidth: 14
+                        }
+                    }
+                }
             }
         }
 

@@ -39,6 +39,7 @@ class MusicManager : public QObject
     Q_PROPERTY(int playlistSource READ playlistSource WRITE setPlaylistSource NOTIFY playlistSourceChanged)
     Q_PROPERTY(bool trackCrossSource READ trackCrossSource WRITE setTrackCrossSource NOTIFY trackCrossSourceChanged)
     Q_PROPERTY(bool minimizeToTray READ minimizeToTray WRITE setMinimizeToTray NOTIFY minimizeToTrayChanged)
+    Q_PROPERTY(qreal volume READ volume WRITE setVolume NOTIFY volumeChanged)
 
     // ---- 自定义播放列表 ----
     Q_PROPERTY(QVariantList customPlaylists READ customPlaylists NOTIFY customPlaylistsChanged)
@@ -122,6 +123,10 @@ public:
     bool trackCrossSource() const { return m_trackCrossSource; }
     void setTrackCrossSource(bool v);
 
+    // ---- 音量 ----
+    qreal volume() const { return m_volume; }
+    void setVolume(qreal vol);
+
     // ---- 关闭到系统托盘 ----
     bool minimizeToTray() const { return m_minimizeToTray; }
     void setMinimizeToTray(bool v);
@@ -191,6 +196,7 @@ signals:
     void playlistSourceChanged();
     void trackCrossSourceChanged();
     void minimizeToTrayChanged();
+    void volumeChanged();
     void customPlaylistsChanged();
     void playingListIndexChanged();
     void positionChanged(qint64 ms);
@@ -240,6 +246,7 @@ private:
     int m_playlistSource = 0;       // 活跃播放列表来源 (SourcePlaylist=0)
     bool m_trackCrossSource = false; // 跨来源播放跟踪（默认关闭）
     bool m_minimizeToTray = false;
+    qreal m_volume = 0.9;
     QVariantList m_customPlaylists;         // 自定义播放列表
     int m_playingListIndex = -1;            // -1=无, 0=库, 1=收藏, 2=历史, 3+n=自定义
     void loadSettings();

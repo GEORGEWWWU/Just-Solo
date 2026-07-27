@@ -309,7 +309,7 @@ MusicManager::MusicManager(QObject *parent)
     : QObject(parent)
 {
     m_audioEngine = new AudioEngine(this);
-    m_audioEngine->setVolume(0.9f);
+    m_audioEngine->setVolume(static_cast<float>(m_volume));
 
     m_loadTimer = new QTimer(this);
     m_loadTimer->setSingleShot(true);
@@ -415,6 +415,12 @@ void MusicManager::loadSettings() {
         m_minimizeToTray = obj.value("minimizeToTray").toBool(false);
         emit minimizeToTrayChanged();
     }
+    if (obj.contains("volume")) {
+        m_volume = obj.value("volume").toDouble(m_volume);
+        emit volumeChanged();
+        if (m_audioEngine)
+            m_audioEngine->setVolume(static_cast<float>(m_volume));
+    }
 }
 
 void MusicManager::saveSettings() {
@@ -426,6 +432,7 @@ void MusicManager::saveSettings() {
     obj["menuOpacity"] = m_menuOpacity;
     obj["trackCrossSource"] = m_trackCrossSource;
     obj["minimizeToTray"] = m_minimizeToTray;
+    obj["volume"] = m_volume;
     QJsonDocument doc(obj);
     QFile file(m_cacheDir + "/settings.json");
     if (file.open(QIODevice::WriteOnly)) {
@@ -469,6 +476,16 @@ void MusicManager::setMinimizeToTray(bool v) {
     if (v == m_minimizeToTray) return;
     m_minimizeToTray = v;
     emit minimizeToTrayChanged();
+    saveSettings();
+}
+
+void MusicManager::setVolume(qreal vol) {
+    vol = qBound(0.0, vol, 1.0);
+    if (qFuzzyCompare(vol, m_volume)) return;
+    m_volume = vol;
+    if (m_audioEngine)
+        m_audioEngine->setVolume(static_cast<float>(vol));
+    emit volumeChanged();
     saveSettings();
 }
 

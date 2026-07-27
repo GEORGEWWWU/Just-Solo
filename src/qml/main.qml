@@ -1212,13 +1212,14 @@ Window {
 
         RowLayout {
             anchors.fill: parent
-            anchors.leftMargin: 20
-            anchors.rightMargin: 20
-            spacing: 20
+            anchors.leftMargin: 16
+            anchors.rightMargin: 16
+            spacing: 0
 
             // ---- 左侧：封面 + 歌名/歌手 ----
             RowLayout {
                 Layout.fillWidth: true
+                Layout.maximumWidth: mainWindow.width * 0.35
                 spacing: 12
 
                 Rectangle {
@@ -1282,10 +1283,14 @@ Window {
                 }
             }
 
-            // ---- 中间：播放控制按钮 ----
-            RowLayout {
-                spacing: 24
+            // ---- 左弹性间距 ----
+            Item { Layout.fillWidth: true }
 
+            // ---- 中间：播放控制按钮 + 音量 ----
+            RowLayout {
+                spacing: 20
+
+                // 上一首
                 Item {
                     Layout.preferredWidth: 22; Layout.preferredHeight: 22
                     Image {
@@ -1302,6 +1307,7 @@ Window {
                     }
                 }
 
+                // 播放/暂停
                 Rectangle {
                     width: 42; height: 42; radius: 21; color: "#444466"
                     Behavior on color { ColorAnimation { duration: 120 } }
@@ -1331,6 +1337,7 @@ Window {
                     }
                 }
 
+                // 下一首
                 Item {
                     Layout.preferredWidth: 22; Layout.preferredHeight: 22
                     Image {
@@ -1345,7 +1352,107 @@ Window {
                         onClicked: musicManager.next()
                     }
                 }
+
+                // ---- 音量按钮 ----
+                Item {
+                    id: volumeBtn
+                    Layout.preferredWidth: 22; Layout.preferredHeight: 22
+                    Layout.leftMargin: 8
+
+                    Image {
+                        anchors.centerIn: parent
+                        source: "qrc:/qt/qml/JustSolo/data/image/volume-logo.png"
+                        width: 22; height: 22
+                        opacity: volumeMA.containsMouse ? 0.9 : 0.55
+                        Behavior on opacity { NumberAnimation { duration: 100 } }
+                    }
+                    MouseArea {
+                        id: volumeMA
+                        anchors.fill: parent; anchors.margins: -8
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: volumePopup.open()
+                    }
+
+                    // 音量弹出面板
+                    Popup {
+                        id: volumePopup
+                        x: parent.width / 2 - width / 2
+                        y: -height - 14
+                        width: 180; height: 48
+                        padding: 8
+                        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+
+                        background: Rectangle {
+                            radius: 8; color: "#2a2a48"
+                            opacity: musicManager.menuOpacity
+                            border.color: "#444466"; border.width: 1
+                        }
+
+                        RowLayout {
+                            anchors.fill: parent
+                            spacing: 8
+
+                            Label {
+                                text: Math.round(musicManager.volume * 100)
+                                font.family: appFont.name
+                                font.pixelSize: 12
+                                color: "#aaa"
+                                Layout.preferredWidth: 28
+                                horizontalAlignment: Text.AlignRight
+                            }
+
+                            Slider {
+                                id: volumeSlider
+                                Layout.fillWidth: true
+                                from: 0; to: 1; value: musicManager.volume
+                                snapMode: Slider.NoSnap
+                                live: true
+
+                                onMoved: musicManager.volume = value
+
+                                background: Rectangle {
+                                    implicitHeight: 4
+                                    radius: 2
+                                    color: "#3a3a55"
+                                    Rectangle {
+                                        width: volumeSlider.visualPosition * parent.width
+                                        height: parent.height
+                                        radius: 2
+                                        color: "#00d4ff"
+                                    }
+                                }
+
+                                handle: Rectangle {
+                                    x: volumeSlider.leftPadding + volumeSlider.visualPosition * (volumeSlider.availableWidth - width)
+                                    y: volumeSlider.topPadding + volumeSlider.implicitHeight / 2 - height / 2
+                                    width: 14; height: 14; radius: 7
+                                    color: volumeHandleMA.containsMouse ? "#eee" : "#ccc"
+                                    Behavior on color { ColorAnimation { duration: 100 } }
+
+                                    MouseArea {
+                                        id: volumeHandleMA
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        cursorShape: Qt.PointingHandCursor
+                                    }
+                                }
+                            }
+
+                            Label {
+                                text: "%"
+                                font.family: appFont.name
+                                font.pixelSize: 12
+                                color: "#666"
+                                Layout.preferredWidth: 14
+                            }
+                        }
+                    }
+                }
             }
+
+            // ---- 右弹性间距 ----
+            Item { Layout.fillWidth: true }
 
             // ---- 右侧：播放进度（固定窗口 1/3） ----
             RowLayout {
