@@ -15,10 +15,10 @@ Rectangle {
     clip: false                      // 允许灰卡超出边界（初始展开时）
 
     property real dropGap: sortMode && showDropAbove ? 58 : 0
-    Behavior on dropGap { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
+    Behavior on dropGap { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
 
     property real placeholderH: sortMode && showDropAbove ? 50 : 0
-    Behavior on placeholderH { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
+    Behavior on placeholderH { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
 
     property real placeholderOpacity: sortMode && showDropAbove ? 0.9 : 0
     Behavior on placeholderOpacity { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
@@ -105,6 +105,7 @@ Rectangle {
                 anchors.fill: parent
                 cursorShape: Qt.SizeVerCursor
                 hoverEnabled: true
+                preventStealing: true
 
                 property bool active: false
 

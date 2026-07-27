@@ -52,6 +52,12 @@ ColumnLayout {
     property real dragOffsetY: 0       // 鼠标在拖拽行内的偏移（相对行顶）
     property real dragOverlayY: 0      // 拖拽浮层的 Y 坐标（相对 musicListView）
 
+    // ---- 拖拽自动滚动 ----
+    property int _autoScrollDirection: 0  // -1=向上, 1=向下, 0=停止
+    property real _dragEdgeY: 0           // 进入边缘区时的鼠标 Y（相对 musicListView）
+    property real _dropIndicatorY: 0      // 浮动放置指示线 Y
+    property int _autoScrollFinalIndex: -1 // 自动滚动期间计算的最终目标索引
+
     // 切换手动排序模式
     function toggleSortMode() {
         manualSortMode = !manualSortMode
@@ -60,6 +66,7 @@ ColumnLayout {
             dropTargetIndex = -1
             draggedTrack = null
             dragOverlay.visible = false
+            _autoScrollFinalIndex = -1
         }
     }
 
@@ -211,7 +218,7 @@ ColumnLayout {
                 font.family: fontFamily; font.pixelSize: 14; color: "#00d4ff"
             }
             Label {
-                text: "排序模式 — 拖拽歌曲行重新排序"
+                text: "排序模式 — 拖拽排序，拖到边缘自动滚动"
                 font.family: fontFamily; font.pixelSize: 12; color: "#00d4ff"
                 Layout.fillWidth: true
             }
@@ -289,22 +296,43 @@ ColumnLayout {
                 var posInListView = mapToItem(musicListView, 0, mouseY)
                 root.dragOverlayY = posInListView.y - root.dragOffsetY
 
-                // 计算目标索引
-                var rowHeight = 50 + musicListView.spacing  // SongRow height + spacing
-                var targetY = posInListView.y
+                // 计算目标索引（viewport Y + contentY → content Y）
+                var rowHeight = 50 + musicListView.spacing
+                var targetY = posInListView.y + musicListView.contentY
                 var targetIdx = Math.floor((targetY + rowHeight / 2) / rowHeight)
                 targetIdx = Math.max(0, Math.min(targetIdx, musicListView.count - 1))
                 if (targetIdx !== root.dropTargetIndex) {
                     root.dropTargetIndex = targetIdx
                 }
+                // 更新放置指示线位置（目标行顶边缘）
+                root._dropIndicatorY = targetIdx * rowHeight - musicListView.contentY - 1
+
+                // ---- 拖拽自动滚动（边缘检测） ----
+                var edgeThreshold = 50
+                var lvHeight = musicListView.height
+                if (posInListView.y < edgeThreshold && musicListView.contentY > 0) {
+                    root._autoScrollDirection = -1
+                    root._dragEdgeY = Math.max(0, posInListView.y)
+                    if (!autoScrollTimer.running) autoScrollTimer.start()
+                } else if (posInListView.y > lvHeight - edgeThreshold
+                           && musicListView.contentY < musicListView.contentHeight - lvHeight) {
+                    root._autoScrollDirection = 1
+                    root._dragEdgeY = Math.min(lvHeight, posInListView.y)
+                    if (!autoScrollTimer.running) autoScrollTimer.start()
+                } else {
+                    if (autoScrollTimer.running) autoScrollTimer.stop()
+                }
             }
             onDragEnded: {
+                if (autoScrollTimer.running) autoScrollTimer.stop()
                 var finalFrom = root.draggedIndex
-                var finalTo = root.dropTargetIndex
+                // 自动滚动结束时使用 _autoScrollFinalIndex（自动滚动期间不更新 dropTargetIndex）
+                var finalTo = root._autoScrollFinalIndex >= 0 ? root._autoScrollFinalIndex : root.dropTargetIndex
                 dragOverlay.visible = false
                 root.draggedIndex = -1
                 root.dropTargetIndex = -1
                 root.draggedTrack = null
+                root._autoScrollFinalIndex = -1
 
                 if (finalFrom >= 0 && finalTo >= 0 && finalFrom !== finalTo) {
                     root.reorderSong(finalFrom, finalTo)
@@ -360,6 +388,23 @@ ColumnLayout {
                 root.rightClickedIndex = index
                 contextMenu.popup()
             }
+        }
+
+        // ---- 浮动放置指示线（自动滚动时平滑跟随） ----
+        Rectangle {
+            id: dropIndicator
+            z: 998
+            visible: dragOverlay.visible
+            anchors.horizontalCenter: parent.horizontalCenter
+            width: musicListView.width - 20
+            height: 3
+            radius: 1.5
+            color: "#00d4ff"
+            opacity: 0.85
+            y: root._dropIndicatorY
+
+            Behavior on y { NumberAnimation { duration: 80; easing.type: Easing.OutQuad } }
+            Behavior on opacity { NumberAnimation { duration: 120 } }
         }
 
         // ---- 拖拽浮层（排序模式时跟随鼠标） ----
@@ -463,6 +508,41 @@ ColumnLayout {
                 }
 
                 Item { Layout.preferredWidth: root.colPlay; Layout.preferredHeight: 20; Layout.alignment: Qt.AlignVCenter }
+            }
+        }
+    }
+
+    // ---- 拖拽自动滚动定时器 ----
+    Timer {
+        id: autoScrollTimer
+        interval: 30
+        repeat: true
+        onTriggered: {
+            var step = root._autoScrollDirection * 8
+            var newCY = musicListView.contentY + step
+            newCY = Math.max(0, Math.min(newCY,
+                Math.max(0, musicListView.contentHeight - musicListView.height)))
+            musicListView.contentY = newCY
+
+            // 保持浮层在边缘位置
+            root.dragOverlayY = root._dragEdgeY - root.dragOffsetY
+
+            // 重新计算放置目标（viewport Y + contentY → content Y）
+            var rowHeight = 50 + musicListView.spacing
+            var targetY = root._dragEdgeY + musicListView.contentY
+            var targetIdx = Math.floor((targetY + rowHeight / 2) / rowHeight)
+            targetIdx = Math.max(0, Math.min(targetIdx, musicListView.count - 1))
+            // 自动滚动期间不修改 dropTargetIndex（避免触发 per-delegate 动画导致闪烁）
+            root._autoScrollFinalIndex = targetIdx
+            // 仅更新浮动指示线位置
+            root._dropIndicatorY = targetIdx * rowHeight - musicListView.contentY - 1
+
+            // 到达边界时停止
+            if (root._autoScrollDirection < 0 && musicListView.contentY <= 0) {
+                autoScrollTimer.stop()
+            } else if (root._autoScrollDirection > 0
+                       && musicListView.contentY >= musicListView.contentHeight - musicListView.height) {
+                autoScrollTimer.stop()
             }
         }
     }
