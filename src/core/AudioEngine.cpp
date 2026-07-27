@@ -76,14 +76,14 @@ bool AudioEngine::load(const QString &filePath)
     std::wstring path = filePath.toStdWString();
     ma_result result = ma_sound_init_from_file_w(
         m_engine, path.c_str(),
-        MA_SOUND_FLAG_NO_PITCH | MA_SOUND_FLAG_NO_SPATIALIZATION,
+        MA_SOUND_FLAG_STREAM | MA_SOUND_FLAG_NO_PITCH | MA_SOUND_FLAG_NO_SPATIALIZATION,
         nullptr, nullptr, m_sound
     );
 #else
     QByteArray path = filePath.toUtf8();
     ma_result result = ma_sound_init_from_file(
         m_engine, path.constData(),
-        MA_SOUND_FLAG_NO_PITCH | MA_SOUND_FLAG_NO_SPATIALIZATION,
+        MA_SOUND_FLAG_STREAM | MA_SOUND_FLAG_NO_PITCH | MA_SOUND_FLAG_NO_SPATIALIZATION,
         nullptr, nullptr, m_sound
     );
 #endif
@@ -269,19 +269,27 @@ void AudioEngine::retryLoad()
         return;  // 设备仍未恢复
     }
 
+    // 卸载旧声音（进入热插拔模式时可能未清理）
+    if (m_soundInitialized) {
+        ma_sound_stop(m_sound);
+        ma_sound_uninit(m_sound);
+        std::memset(m_sound, 0, sizeof(*m_sound));
+        m_soundInitialized = false;
+    }
+
     // 尝试重新加载
 #ifdef Q_OS_WIN
     std::wstring path = m_hotplugFilePath.toStdWString();
     ma_result result = ma_sound_init_from_file_w(
         m_engine, path.c_str(),
-        MA_SOUND_FLAG_NO_PITCH | MA_SOUND_FLAG_NO_SPATIALIZATION,
+        MA_SOUND_FLAG_STREAM | MA_SOUND_FLAG_NO_PITCH | MA_SOUND_FLAG_NO_SPATIALIZATION,
         nullptr, nullptr, m_sound
     );
 #else
     QByteArray path = m_hotplugFilePath.toUtf8();
     ma_result result = ma_sound_init_from_file(
         m_engine, path.constData(),
-        MA_SOUND_FLAG_NO_PITCH | MA_SOUND_FLAG_NO_SPATIALIZATION,
+        MA_SOUND_FLAG_STREAM | MA_SOUND_FLAG_NO_PITCH | MA_SOUND_FLAG_NO_SPATIALIZATION,
         nullptr, nullptr, m_sound
     );
 #endif
