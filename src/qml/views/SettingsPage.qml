@@ -176,13 +176,17 @@ Rectangle {
             }
         }
 
-        // 占位撑开，确保顶部内容锁死不移动
-        Item { Layout.fillHeight: true }
+        // 占位撑开（有更新日志时收缩，让日志区向上拉伸）
+        Item {
+            Layout.fillHeight: true
+            visible: changelogArea.text.length === 0
+        }
 
-        // 下方内容区域
+        // 下方内容区域（底部锚定，向上拉伸）
         ColumnLayout {
             Layout.fillWidth: true
-            Layout.topMargin: 0
+            Layout.fillHeight: true
+            Layout.alignment: Qt.AlignBottom
             spacing: 0
 
             // 更新日志标题
@@ -195,10 +199,10 @@ Rectangle {
                 visible: changelogArea.text.length > 0
             }
 
-            // 更新日志内容
+            // 更新日志内容（自适应拉伸）
             Rectangle {
                 Layout.fillWidth: true
-                Layout.preferredHeight: 360
+                Layout.fillHeight: true
                 Layout.minimumHeight: 120
                 color: "#333350"
                 radius: 8
