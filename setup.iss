@@ -3,7 +3,7 @@
 ; 仅限非商业用途
 
 #define MyAppName "Just Solo"
-#define MyAppVersion "0.7.6"
+#define MyAppVersion "0.8.0"
 #define MyAppPublisher "ZZJ-JACK"
 #define MyAppURL "https://justsolo.zzjjack.us.kg"
 #define MyAppExeName "JustSolo.exe"
@@ -31,7 +31,7 @@ ArchitecturesAllowed=x64compatible
 ;下行注释，强制安装程序在 64 位系统上，但不强制以 64 位模式运行.
 ArchitecturesInstallIn64BitMode=x64compatible
 ; 取消注释以下行以使用 64 位安装程序。
-;SetupArchitecture=x64
+SetupArchitecture=x64
 DisableProgramGroupPage=yes
 LicenseFile=F:\Coding\1-Code\C++\Just-Solo\LICENSE
 InfoBeforeFile=F:\Coding\1-Code\C++\Just-Solo\安装说明.txt
