@@ -110,10 +110,14 @@ Rectangle {
 
                 onPressed: function(mouse) {
                     active = true
-                    songRow.dragStarted(mouse.y)
+                    var pt = mapToItem(songRow, mouse.x, mouse.y)
+                    songRow.dragStarted(pt.y)
                 }
                 onPositionChanged: function(mouse) {
-                    if (active) songRow.dragMoved(mouse.y)
+                    if (active) {
+                        var pt = mapToItem(songRow, mouse.x, mouse.y)
+                        songRow.dragMoved(pt.y)
+                    }
                 }
                 onReleased: {
                     if (active) {
