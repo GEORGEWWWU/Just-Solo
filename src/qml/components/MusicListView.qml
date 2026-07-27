@@ -280,7 +280,7 @@ ColumnLayout {
             showDropBelow: false
 
             Behavior on opacity {
-                NumberAnimation { duration: 150; easing.type: Easing.OutCubic }
+                NumberAnimation { duration: 0 }
             }
 
             onDragStarted: function(mouseY) {
@@ -294,7 +294,8 @@ ColumnLayout {
             }
             onDragMoved: function(mouseY) {
                 var posInListView = mapToItem(musicListView, 0, mouseY)
-                root.dragOverlayY = posInListView.y - root.dragOffsetY
+                root.dragOverlayY = Math.max(0, Math.min(posInListView.y - root.dragOffsetY,
+                    musicListView.height - 50))
 
                 // 计算目标索引（viewport Y + contentY → content Y）
                 var rowHeight = 50 + musicListView.spacing
@@ -524,8 +525,9 @@ ColumnLayout {
                 Math.max(0, musicListView.contentHeight - musicListView.height)))
             musicListView.contentY = newCY
 
-            // 保持浮层在边缘位置
-            root.dragOverlayY = root._dragEdgeY - root.dragOffsetY
+            // 保持浮层在边缘位置（不超出 ListView 可视区）
+            root.dragOverlayY = Math.max(0, Math.min(root._dragEdgeY - root.dragOffsetY,
+                musicListView.height - 50))
 
             // 重新计算放置目标（viewport Y + contentY → content Y）
             var rowHeight = 50 + musicListView.spacing
