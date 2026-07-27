@@ -68,10 +68,10 @@ static void customizeTitleBar(HWND hwnd) {
     DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &darkMode, sizeof(darkMode));
     DwmSetWindowAttribute(hwnd, 19, &darkMode, sizeof(darkMode));  // 旧版常量
 
-    // Win11+: 标题栏背景 #1e1e2e，文字 #cccccc，边框同背景（视觉无边框）
-    // COLORREF = 0x00BBGGRR → RGB(0x1e, 0x1e, 0x2e) = 0x002e1e1e
+    // Win11+: 标题栏背景 #282844，文字 #cccccc，边框同背景（视觉无边框）
+    // COLORREF = 0x00BBGGRR → RGB(0x28, 0x28, 0x44) = 0x00442828
     if (isWindows11()) {
-        COLORREF caption = RGB(30, 30, 46);   // #1e1e2e
+        COLORREF caption = RGB(40, 40, 68);   // #282844（与右内容区一致）
         COLORREF text    = RGB(204, 204, 204); // #cccccc
         COLORREF border  = caption;            // 与背景同色
         DwmSetWindowAttribute(hwnd, DWMWA_CAPTION_COLOR, &caption, sizeof(caption));
