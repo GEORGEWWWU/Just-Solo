@@ -85,6 +85,7 @@ static void customizeTitleBar(HWND hwnd) {
 #include "core/MusicManager.h"
 #include "core/SMTCManager.h"
 #include "core/HotkeyManager.h"
+#include "core/UpdateChecker.h"
 #include "services/LyricServer.h"
 
 // ============================================================
@@ -308,6 +309,10 @@ int main(int argc, char *argv[])
     QObject::connect(hotkeyManager, &HotkeyManager::nextTriggered, musicManager, &MusicManager::next);
     QObject::connect(hotkeyManager, &HotkeyManager::previousTriggered, musicManager, &MusicManager::previous);
     engine.rootContext()->setContextProperty("hotkeyManager", hotkeyManager);
+
+    // 软件更新检查器
+    UpdateChecker *updateChecker = new UpdateChecker(QString(APP_VERSION_DISPLAY), &app);
+    engine.rootContext()->setContextProperty("updateChecker", updateChecker);
 
     // 从 QML 模块加载主界面
     const QUrl url(QStringLiteral("qrc:/qt/qml/JustSolo/src/qml/main.qml"));

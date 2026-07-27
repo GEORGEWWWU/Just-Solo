@@ -1,6 +1,8 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import QtQuick.Dialogs
+import QtCore
 
 // ============================================================
 // 设置页 - 外观 / 软件更新 / 关于 三个子页面
@@ -13,6 +15,19 @@ Rectangle {
     // ---- 外部注入属性 ----
     property string settingsSubMenu: "appearance"
     property string fontFamily: ""
+    property string selectedDownloadUrl: ""
+
+    FontLoader {
+        id: updateFont
+        source: "qrc:/qt/qml/JustSolo/data/font/HarmonyOS_Sans_SC_Regular.ttf"
+    }
+
+    function checkUpdate() {
+        checkingLabel.visible = true
+        statusLabel.text = ""
+        statusLabel.color = "#ccc"
+        updateChecker.checkForUpdates()
+    }
 
     // ---- 快捷键捕获（顶层统一处理，绕过 Repeater 焦点域） ----
     property int capturingHkId: -1  // -1 = 不在捕获状态
@@ -32,40 +47,321 @@ Rectangle {
 
     // ---- 软件更新 ----
     ColumnLayout {
-        anchors.fill: parent; spacing: 0
+        id: updateSection
+        anchors.fill: parent
+        spacing: 0
         visible: settingsSubMenu === "update"
 
-        Item { Layout.preferredHeight: 24 }
-        Rectangle {
-            Layout.fillWidth: true; Layout.maximumWidth: 520
-            Layout.preferredHeight: 80; radius: 8
-            color: "#2e2e4a"; border.color: "#3a3a55"
-            ColumnLayout {
-                anchors.fill: parent; anchors.margins: 20; spacing: 6
-                RowLayout {
-                    Layout.fillWidth: true
-                    Label { text: "软件版本"; font.family: fontFamily; font.pixelSize: 14; color: "#ccc"; Layout.preferredWidth: 72 }
-                    Item { Layout.fillWidth: true }
-                    Label { text: APP_VERSION; font.family: fontFamily; font.pixelSize: 14; font.bold: true; color: "#e8e8e8" }
-                }
-                RowLayout {
-                    Layout.fillWidth: true
-                    Label { text: "构建版本"; font.family: fontFamily; font.pixelSize: 13; color: "#999"; Layout.preferredWidth: 72 }
-                    Item { Layout.fillWidth: true }
-                    Label { text: BUILD_VERSION; font.family: fontFamily; font.pixelSize: 13; color: "#ccc" }
+        // 顶部固定区域：版本卡片 + 检查更新按钮 + 最新版本信息（锁死，不随更新数据变化移动）
+        ColumnLayout {
+            Layout.fillWidth: true
+            Layout.alignment: Qt.AlignTop
+            spacing: 0
+
+            // 软件版本卡片
+            Rectangle {
+                Layout.fillWidth: true; Layout.maximumWidth: 520
+                Layout.preferredHeight: 80; radius: 8
+                color: "#2e2e4a"; border.color: "#3a3a55"
+                ColumnLayout {
+                    anchors.fill: parent; anchors.margins: 20; spacing: 6
+                    RowLayout {
+                        Layout.fillWidth: true
+                        Label { text: "软件版本"; font.family: updateFont.name; font.pixelSize: 14; color: "#ccc"; Layout.preferredWidth: 72 }
+                        Item { Layout.fillWidth: true }
+                        Label { text: APP_VERSION; font.family: updateFont.name; font.pixelSize: 14; font.bold: true; color: "#e8e8e8" }
+                    }
+                    RowLayout {
+                        Layout.fillWidth: true
+                        Label { text: "构建版本"; font.family: updateFont.name; font.pixelSize: 13; color: "#999"; Layout.preferredWidth: 72 }
+                        Item { Layout.fillWidth: true }
+                        Label { text: BUILD_VERSION; font.family: updateFont.name; font.pixelSize: 13; color: "#ccc" }
+                    }
                 }
             }
+
+            Item { Layout.preferredHeight: 12 }
+
+            // 检查更新按钮 + 最新版本信息（横排）
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 20
+
+                // 检查更新按钮
+                Rectangle {
+                    Layout.preferredWidth: 160; Layout.preferredHeight: 40
+                    radius: 8; color: "#3a3a5a"
+                    Label { anchors.centerIn: parent; text: "检查更新"; font.family: updateFont.name; font.pixelSize: 14; color: "#e8e8e8" }
+                    MouseArea {
+                        anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+                        onClicked: checkUpdate()
+                        onEntered: parent.color = "#4a4a6a"
+                        onExited: parent.color = "#3a3a5a"
+                    }
+                }
+
+                // 最新版本信息
+                GridLayout {
+                    columns: 2
+                    columnSpacing: 10
+                    rowSpacing: 4
+                    visible: latestVerLabel.text.length > 0
+
+                    Label { text: "最新版本："; font.family: updateFont.name; font.pixelSize: 13; color: "#999" }
+                    Label {
+                        id: latestVerLabel
+                        text: ""
+                        font.family: updateFont.name; font.pixelSize: 13; font.bold: true
+                        color: updateChecker.isNewer ? "#4ade80" : "#ddd"
+                    }
+
+                    Label { text: "发布日期："; font.family: updateFont.name; font.pixelSize: 12; color: "#999"; visible: dateLabel.text.length > 0 }
+                    Label {
+                        id: dateLabel
+                        text: ""
+                        font.family: updateFont.name; font.pixelSize: 12; color: "#ccc"
+                        visible: text.length > 0
+                    }
+                }
+
+                // 下载安装程序按钮
+                Rectangle {
+                    id: downloadBtn
+                    Layout.preferredWidth: 140; Layout.preferredHeight: 38; radius: 8
+                    visible: updateChecker.isNewer && !updateChecker.downloading
+                    color: dlBtnMA.containsMouse ? "#4a8a4a" : "#3a7a3a"
+                    Label { anchors.centerIn: parent; text: "下载安装程序"; font.family: updateFont.name; font.pixelSize: 14; color: "#e8e8e8" }
+                    MouseArea {
+                        id: dlBtnMA
+                        anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+                        onClicked: downloadSourceDialog.open()
+                    }
+                }
+
+                // 取消下载按钮（下载中替换下载按钮）
+                Rectangle {
+                    id: cancelBtn
+                    Layout.preferredWidth: 140; Layout.preferredHeight: 38; radius: 8
+                    visible: updateChecker.downloading
+                    color: cancelBtnMA.containsMouse ? "#6a3a3a" : "#5a2a2a"
+                    Label { anchors.centerIn: parent; text: "取消下载"; font.family: updateFont.name; font.pixelSize: 14; color: "#ef4444" }
+                    MouseArea {
+                        id: cancelBtnMA
+                        anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            progressRow.visible = false
+                            updateChecker.cancelDownload()
+                        }
+                    }
+                }
+
+                // 检查中提示（已有更新信息时显示在下载按钮右边）
+                Label {
+                    id: checkingLabel
+                    text: "正在检查更新…"
+                    font.family: updateFont.name; font.pixelSize: 13; color: "#ccc"
+                    visible: false
+                }
+
+                Item { Layout.fillWidth: true }
+            }
+
+            // 状态提示
+            Label {
+                id: statusLabel
+                text: ""
+                font.family: updateFont.name; font.pixelSize: 13; color: "#ccc"
+                Layout.topMargin: 8
+                visible: text.length > 0
+            }
         }
-        Item { Layout.preferredHeight: 16 }
-        Rectangle {
-            Layout.preferredWidth: 160; Layout.preferredHeight: 40
-            radius: 8; color: "#2a2a3a"; opacity: 0.5
-            Label { anchors.centerIn: parent; text: "检查更新"; font.family: fontFamily; font.pixelSize: 14; color: "#999" }
-        }
-        Label { text: "请前往以下地址查看更新："; font.family: fontFamily; font.pixelSize: 13; color: "#ccc"; Layout.topMargin: 8 }
-        Label { text: `<a href="https://gitcode.com/ZZJ-JACK/Just-Solo">https://gitcode.com/ZZJ-JACK/Just-Solo</a>`; textFormat: Text.RichText; font.family: fontFamily; font.pixelSize: 13; color: "#00d4ff"; Layout.topMargin: 4; onLinkActivated: Qt.openUrlExternally(link) }
-        Label { text: `<a href="https://github.com/ZZJ-jack/Just-Solo">https://github.com/ZZJ-jack/Just-Solo</a>`; textFormat: Text.RichText; font.family: fontFamily; font.pixelSize: 13; color: "#00d4ff"; Layout.topMargin: 2; onLinkActivated: Qt.openUrlExternally(link) }
+
+        // 占位撑开，确保顶部内容锁死不移动
         Item { Layout.fillHeight: true }
+
+        // 下方内容区域
+        ColumnLayout {
+            Layout.fillWidth: true
+            Layout.topMargin: 0
+            spacing: 0
+
+            // 更新日志标题
+            Label {
+                text: "更新日志"
+                font.family: updateFont.name; font.pixelSize: 18; font.bold: true
+                color: "#e8e8e8"
+                Layout.topMargin: 10
+                Layout.bottomMargin: 6
+                visible: changelogArea.text.length > 0
+            }
+
+            // 更新日志内容
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 360
+                Layout.minimumHeight: 120
+                color: "#333350"
+                radius: 8
+                border.color: "#444466"
+                visible: changelogArea.text.length > 0
+
+                ScrollView {
+                    id: changelogScroll
+                    anchors.fill: parent
+                    anchors.margins: 12
+                    clip: true
+                    ScrollBar.vertical.policy: ScrollBar.AsNeeded
+                    ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+
+                    Text {
+                        id: changelogArea
+                        width: changelogScroll.width
+                        text: ""
+                        font.family: updateFont.name
+                        font.pixelSize: 13
+                        color: "#ccc"
+                        wrapMode: Text.WordWrap
+                        textFormat: Text.MarkdownText
+                    }
+                }
+            }
+
+            // 项目链接
+            RowLayout {
+                Layout.fillWidth: true
+                Layout.topMargin: 10
+                visible: latestVerLabel.text.length > 0
+
+                Item { Layout.fillWidth: true }
+                Label { text: "官方网站"; font.family: updateFont.name; font.pixelSize: 13; color: "#00d4ff"; Layout.rightMargin: 12
+                    MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: Qt.openUrlExternally("https://justsolo.zzjjack.us.kg") } }
+                Label { text: "GitCode"; font.family: updateFont.name; font.pixelSize: 13; color: "#00d4ff"; Layout.rightMargin: 12
+                    MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: Qt.openUrlExternally("https://gitcode.com/ZZJ-JACK/Just-Solo") } }
+                Label { text: "GitHub"; font.family: updateFont.name; font.pixelSize: 13; color: "#00d4ff"
+                    MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: Qt.openUrlExternally("https://github.com/ZZJ-jack/Just-Solo") } }
+            }
+
+            // 下载进度条
+            RowLayout {
+                id: progressRow
+                Layout.fillWidth: true
+                Layout.topMargin: 8
+                spacing: 10
+                visible: false
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 6
+                    radius: 3
+                    color: "#3a3a55"
+
+                    Rectangle {
+                        width: (updateChecker.downloadTotal > 0)
+                               ? parent.width * (updateChecker.downloadProgress / updateChecker.downloadTotal) : 0
+                        height: parent.height; radius: 3
+                        color: "#00d4ff"
+                        Behavior on width { NumberAnimation { duration: 200 } }
+                    }
+                }
+                Label {
+                    id: progressLabel
+                    text: "0%"
+                    font.family: updateFont.name; font.pixelSize: 12; color: "#999"
+                    Layout.preferredWidth: 48
+                }
+            }
+
+            // 下载完成提示
+            Label {
+                id: downloadsLabel
+                text: "安装程序已下载完成，请前往保存文件夹运行安装程序。"
+                font.family: updateFont.name; font.pixelSize: 13
+                color: "#4ade80"
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+                Layout.topMargin: 4
+                visible: false
+            }
+
+            // 操作按钮行
+            RowLayout {
+                Layout.fillWidth: true
+                Layout.topMargin: 12
+                spacing: 10
+
+                Item { Layout.fillWidth: true }
+
+                Rectangle {
+                    id: openFolderBtn
+                    Layout.preferredWidth: 160; Layout.preferredHeight: 38; radius: 8
+                    visible: false
+                    color: ofBtnMA.containsMouse ? "#4a6a8a" : "#3a5a7a"
+                    Label { anchors.centerIn: parent; text: "打开文件夹"; font.family: updateFont.name; font.pixelSize: 14; color: "#e8e8e8" }
+                    MouseArea {
+                        id: ofBtnMA
+                        anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+                        onClicked: updateChecker.openDownloadFolder()
+                    }
+                }
+            }
+
+            Item { Layout.preferredHeight: 12 }
+        }
+
+        // 首次创建时（进入设置已选中软件更新）也加载缓存数据
+        Component.onCompleted: syncCachedData()
+        onVisibleChanged: { if (visible) syncCachedData() }
+
+        function syncCachedData() {
+            if (!updateChecker.latestVersion) return
+            latestVerLabel.text = updateChecker.latestVersion
+            var rawDate = updateChecker.releaseDate
+            if (rawDate) {
+                var d = new Date(rawDate)
+                dateLabel.text = d.toLocaleDateString(Qt.locale("zh_CN"), "yyyy-MM-dd")
+            }
+            changelogArea.text = updateChecker.changelog
+        }
+    }
+
+    // ---- 绑定 C++ 更新信号 ----
+    Connections {
+        target: updateChecker
+        enabled: settingsSubMenu === "update"
+
+        function onInfoChanged() {
+            checkingLabel.visible = false
+            statusLabel.text = ""
+            latestVerLabel.text = updateChecker.latestVersion
+            var rawDate = updateChecker.releaseDate
+            if (rawDate) {
+                var d = new Date(rawDate)
+                dateLabel.text = d.toLocaleDateString(Qt.locale("zh_CN"), "yyyy-MM-dd")
+            }
+            changelogArea.text = updateChecker.changelog
+        }
+
+        function onDownloadProgressChanged() {
+            var received = updateChecker.downloadProgress
+            var total = updateChecker.downloadTotal
+            var pct = total > 0 ? Math.round(received / total * 100) : 0
+            progressLabel.text = pct + "%"
+        }
+
+        function onDownloadFinished(success, filePath, folderPath) {
+            progressRow.visible = false
+            if (success) {
+                downloadsLabel.visible = true
+                openFolderBtn.visible = true
+                updateChecker.openDownloadFolder()
+            }
+        }
+
+        function onNotifyMessage(title, message) {
+            checkingLabel.visible = false
+            statusLabel.text = title + "：" + message
+            statusLabel.color = "#ef4444"
+        }
     }
 
     // ---- 播放设置 ----
@@ -603,9 +899,6 @@ Rectangle {
             }
         }
 
-        Item { Layout.preferredHeight: 8 }
-        Item { Layout.preferredHeight: 8 }
-        Label { text: "构建版本: " + BUILD_VERSION; font.family: fontFamily; font.pixelSize: 13; color: "#999" }
         Item { Layout.preferredHeight: 12 }
         Label { text: "项目地址"; font.family: fontFamily; font.pixelSize: 13; color: "#ccc" }
         Label { text: `<a href="https://gitcode.com/ZZJ-JACK/Just-Solo">https://gitcode.com/ZZJ-JACK/Just-Solo</a>`; textFormat: Text.RichText; font.family: fontFamily; font.pixelSize: 13; color: "#00d4ff"; Layout.topMargin: 4; onLinkActivated: Qt.openUrlExternally(link) }
@@ -614,6 +907,126 @@ Rectangle {
         Label { text: "图标来源: 鸿蒙开发者"; font.family: fontFamily; font.pixelSize: 13; color: "#ccc" }
         Label { text: `<a href="https://developer.huawei.com/consumer/cn/">https://developer.huawei.com/consumer/cn</a>`; textFormat: Text.RichText; font.family: fontFamily; font.pixelSize: 13; color: "#00d4ff"; Layout.topMargin: 4; onLinkActivated: Qt.openUrlExternally(link) }
         Item { Layout.fillHeight: true }
+    }
+
+    // ---- 文件夹选择对话框（下载用） ----
+    FolderDialog {
+        id: folderDialog
+        title: "选择保存安装程序的文件夹"
+        currentFolder: StandardPaths.writableLocation(StandardPaths.DownloadLocation)
+
+        onAccepted: {
+            var path = folderDialog.selectedFolder.toString()
+            if (path.startsWith("file:///")) path = path.substring(8)
+            else if (path.startsWith("file://")) path = path.substring(7)
+            progressRow.visible = true
+            if (selectedDownloadUrl) {
+                updateChecker.downloadInstaller(path, selectedDownloadUrl)
+                selectedDownloadUrl = ""
+            } else {
+                updateChecker.downloadInstaller(path)
+            }
+        }
+    }
+
+    // ---- 下载源选择弹窗 ----
+    Dialog {
+        id: downloadSourceDialog
+        parent: Overlay.overlay
+        modal: true
+        standardButtons: Dialog.NoButton
+
+        x: (parent.width - width) / 2
+        y: (parent.height - height) / 2
+        width: 360
+
+        Overlay.modal: Rectangle {
+            color: "#80000000"
+        }
+
+        background: Rectangle {
+            radius: 10
+            color: "#2a2a3a"
+            border.color: "#3a3a5a"
+        }
+
+        header: Label {
+            text: "选择下载源"
+            font.family: fontFamily
+            font.pixelSize: 16
+            font.bold: true
+            color: "#e8e8e8"
+            padding: 16
+        }
+
+        contentItem: ColumnLayout {
+            spacing: 12
+
+            Label {
+                text: "请选择安装程序下载来源："
+                font.family: fontFamily; font.pixelSize: 13; color: "#ccc"
+                Layout.fillWidth: true; wrapMode: Text.WordWrap
+            }
+
+            Rectangle {
+                Layout.fillWidth: true; Layout.preferredHeight: 44; radius: 8
+                color: giteeMA.containsMouse ? "#3a5a3a" : "#2a4a2a"
+                border.color: "#3a6a3a"
+                Label {
+                    anchors.centerIn: parent
+                    text: "Gitcode 国内下载（推荐）"
+                    font.family: fontFamily; font.pixelSize: 14; color: "#4ade80"
+                }
+                MouseArea {
+                    id: giteeMA
+                    anchors.fill: parent; hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: {
+                        selectedDownloadUrl = ""
+                        downloadSourceDialog.close()
+                        folderDialog.open()
+                    }
+                }
+            }
+
+            Rectangle {
+                Layout.fillWidth: true; Layout.preferredHeight: 44; radius: 8
+                color: githubMA.containsMouse ? "#3a3a5a" : "#2a2a4a"
+                border.color: "#3a3a6a"
+                Label {
+                    anchors.centerIn: parent
+                    text: "GitHub 国际下载"
+                    font.family: fontFamily; font.pixelSize: 14; color: "#00d4ff"
+                }
+                MouseArea {
+                    id: githubMA
+                    anchors.fill: parent; hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: {
+                        selectedDownloadUrl = updateChecker.githubDownloadUrl
+                        downloadSourceDialog.close()
+                        folderDialog.open()
+                    }
+                }
+            }
+
+            Rectangle {
+                Layout.fillWidth: true; Layout.preferredHeight: 36; radius: 8
+                color: cancelMA.containsMouse ? "#3a3a4a" : "#2a2a3a"
+                border.color: "#3a3a4a"
+                Label {
+                    anchors.centerIn: parent
+                    text: "取消"
+                    font.family: fontFamily; font.pixelSize: 13; color: "#999"
+                }
+                MouseArea {
+                    id: cancelMA
+                    anchors.fill: parent; hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: downloadSourceDialog.close()
+                }
+            }
+        }
     }
 
 }

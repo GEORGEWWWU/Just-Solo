@@ -57,6 +57,7 @@ qt_add_executable(JustSolo WIN32
     src/core/MetadataReader.cpp
     src/core/SMTCManager.cpp
     src/core/HotkeyManager.cpp
+    src/core/UpdateChecker.cpp
     src/services/LyricServer.cpp
     src/services/LyricServer.h
     resources/app.rc
