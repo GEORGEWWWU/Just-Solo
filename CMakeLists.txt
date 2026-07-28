@@ -7,7 +7,7 @@ set(APP_VERSION_MINOR 0)
 set(APP_VERSION_PATCH 0)
 set(APP_VERSION_PRE   0)   # 0=正式版, >0=beta.N
 
-# 格式化显示版本: v0.3.5 或 v0.3.5-beta.2
+# 格式化显示版本: vX.Y.Z 或 vX.Y.Z-beta.N
 if(APP_VERSION_PRE GREATER 0)
     set(APP_VERSION_DISPLAY "v${APP_VERSION_MAJOR}.${APP_VERSION_MINOR}.${APP_VERSION_PATCH}-beta.${APP_VERSION_PRE}")
 else()
@@ -26,9 +26,6 @@ message(STATUS "LyricServer protocol: ${LYRICSERVER_PROTOCOL_VERSION}")
 # 指定 Qt 安装目录
 set(Qt6_DIR "C:/Qt/6.8.3/msvc2022_64/lib/cmake/Qt6")
 set(CMAKE_PREFIX_PATH "C:/Qt/6.8.3/msvc2022_64")
-
-# set(Qt6_DIR "F:/QT/6.11.1/msvc2022_64/lib/cmake/Qt6")
-# set(CMAKE_PREFIX_PATH "F:/QT/6.11.1/msvc2022_64")
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -61,6 +58,8 @@ qt_add_executable(JustSolo WIN32
     src/core/SMTCManager.cpp
     src/core/HotkeyManager.cpp
     src/core/UpdateChecker.cpp
+    src/core/CurlRequest.h
+    src/core/CurlRequest.cpp
     src/services/LyricServer.cpp
     src/services/LyricServer.h
     resources/app.rc
@@ -123,6 +122,18 @@ if(WIN32)
     target_link_libraries(JustSolo PRIVATE dwmapi runtimeobject shlwapi shcore shell32)
 endif()
 
+# ---- libcurl（用于软件更新检查，替代 Qt 网络栈）----
+set(CURL_DIR "F:/Users/ZZJ-JACK/Downloads/curl-8.21.0_5-win64-mingw")
+target_include_directories(JustSolo PRIVATE "${CURL_DIR}/include")
+target_link_libraries(JustSolo PRIVATE "${CURL_DIR}/lib/libcurl-x64.lib")
+# 运行时复制 DLL 到输出目录
+add_custom_command(TARGET JustSolo POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CURL_DIR}/bin/libcurl-x64.dll"
+        "$<TARGET_FILE_DIR:JustSolo>"
+    COMMENT "Copying libcurl-x64.dll to output directory"
+)
+
 # 输出目录
 set_target_properties(JustSolo PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
@@ -143,12 +154,4 @@ target_compile_definitions(JustSolo PRIVATE
     APP_VERSION_DISPLAY="${APP_VERSION_DISPLAY}"
     LYRICSERVER_PROTOCOL_VERSION="${LYRICSERVER_PROTOCOL_VERSION}"
     LYRICSERVER_PROTOCOL_PRE_TIME=${LYRICSERVER_PROTOCOL_PRE_TIME}
-)
-
-# 自动部署 Qt 依赖及 QML 插件
-add_custom_command(TARGET JustSolo POST_BUILD
-#   COMMAND "F:/QT/6.11.1/msvc2022_64/bin/windeployqt.exe"
-    COMMAND "C:/Qt/6.8.3/msvc2022_64/bin/windeployqt.exe"
-            --qmldir "${CMAKE_SOURCE_DIR}/src/qml"
-            "$<TARGET_FILE:JustSolo>"
 )
