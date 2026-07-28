@@ -13,7 +13,7 @@ Rectangle {
     Layout.fillWidth: true
     Layout.preferredHeight: 40
     radius: 6
-    color: active ? "#36365a" : (subNavMouse.containsMouse ? "#2a2a48" : "transparent")
+    color: active ? "#2C2C2C" : (subNavMouse.containsMouse ? "#222222" : "transparent")
 
     Label {
         text: label

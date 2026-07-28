@@ -197,7 +197,7 @@ ColumnLayout {
             Item { Layout.preferredWidth: root.colPlay }
         }
     }
-    Rectangle { Layout.fillWidth: true; height: 1; color: "#2a2a48"; visible: songList.length > 0 }
+    Rectangle { Layout.fillWidth: true; height: 1; color: "#222222"; visible: songList.length > 0 }
 
     // ---- 排序模式提示条 ----
     Rectangle {
@@ -253,10 +253,10 @@ ColumnLayout {
 
         ScrollBar.vertical: ScrollBar {
             id: listScrollBar; policy: ScrollBar.AsNeeded; width: 10
-            background: Rectangle { implicitWidth: 10; radius: 5; color: "#2a2a3a" }
+            background: Rectangle { implicitWidth: 10; radius: 5; color: "#222222" }
             contentItem: Rectangle {
                 implicitWidth: 10; radius: 5
-                color: thumbHover.containsMouse ? "#7777aa" : "#555577"
+                color: thumbHover.containsMouse ? "#777777" : "#3A3A3A"
                 Behavior on color { ColorAnimation { duration: 150 } }
                 MouseArea { id: thumbHover; hoverEnabled: true; acceptedButtons: Qt.NoButton; propagateComposedEvents: true }
             }
@@ -417,7 +417,7 @@ ColumnLayout {
             width: musicListView.width
             height: 50
             radius: 8
-            color: "#3a3a5a"
+            color: "#333333"
             border.color: "#00d4ff"
             border.width: 1.5
             opacity: 0.95
@@ -552,7 +552,7 @@ ColumnLayout {
     // ---- 右键菜单 ----
     Menu {
         id: contextMenu
-        background: Rectangle { color: "#2a2a3a"; border.color: "#444466"; radius: 6; implicitWidth: 150 }
+        background: Rectangle { color: "#222222"; border.color: "#3A3A3A"; radius: 6; implicitWidth: 150 }
         topPadding: 0; bottomPadding: 0
 
         // ---- 手动排序（第一位） ----
@@ -565,7 +565,7 @@ ColumnLayout {
                 font.family: fontFamily; font.pixelSize: 14; color: "#00d4ff"
                 horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter
             }
-            background: Rectangle { color: parent.hovered ? "#3a3a5a" : "transparent"; radius: 4 }
+            background: Rectangle { color: parent.hovered ? "#333333" : "transparent"; radius: 4 }
             onClicked: {
                 root.toggleSortMode()
                 root.rightClickedTrack = null
@@ -574,7 +574,7 @@ ColumnLayout {
         MenuSeparator {
             visible: songList.length >= 2 && root.supportsManualSort && root.showDefaultContextMenu
             height: songList.length >= 2 && root.supportsManualSort && root.showDefaultContextMenu ? implicitHeight : 0
-            contentItem: Rectangle { implicitHeight: 1; implicitWidth: 130; color: "#444466" }
+            contentItem: Rectangle { implicitHeight: 1; implicitWidth: 130; color: "#3A3A3A" }
         }
         // 不支持排序时的提示按钮
         MenuItem {
@@ -586,7 +586,7 @@ ColumnLayout {
                 font.family: fontFamily; font.pixelSize: 14; color: "#666"
                 horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter
             }
-            background: Rectangle { color: parent.hovered ? "#3a3a5a" : "transparent"; radius: 4 }
+            background: Rectangle { color: parent.hovered ? "#333333" : "transparent"; radius: 4 }
             onClicked: {
                 manualSortTipDialog.open()
                 root.rightClickedTrack = null
@@ -595,7 +595,7 @@ ColumnLayout {
         MenuSeparator {
             visible: songList.length >= 2 && !root.supportsManualSort && root.manualSortDisabledMessage !== "" && root.showDefaultContextMenu
             height: songList.length >= 2 && !root.supportsManualSort && root.manualSortDisabledMessage !== "" && root.showDefaultContextMenu ? implicitHeight : 0
-            contentItem: Rectangle { implicitHeight: 1; implicitWidth: 130; color: "#444466" }
+            contentItem: Rectangle { implicitHeight: 1; implicitWidth: 130; color: "#3A3A3A" }
         }
 
         MenuItem {
@@ -605,20 +605,20 @@ ColumnLayout {
             text: root.rightClickedTrack ? (musicManager.isFavorite(root.rightClickedTrack) ? "取消收藏" : "收藏") : "收藏"
             onClicked: { if (root.rightClickedTrack) musicManager.toggleFavorite(root.rightClickedTrack) }
             contentItem: Label { text: menuItem.text; font.family: fontFamily; font.pixelSize: 14; color: "#cccccc"; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
-            background: Rectangle { color: menuItem.hovered ? "#3a3a5a" : "transparent"; radius: 4 }
+            background: Rectangle { color: menuItem.hovered ? "#333333" : "transparent"; radius: 4 }
         }
         MenuItem {
             visible: root.showDefaultContextMenu
             height: root.showDefaultContextMenu ? implicitHeight : 0
             text: "删除此歌曲"
             contentItem: Label { text: "删除此歌曲"; font.family: fontFamily; font.pixelSize: 14; color: "#e06666"; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
-            background: Rectangle { color: parent.hovered ? "#3a3a5a" : "transparent"; radius: 4 }
+            background: Rectangle { color: parent.hovered ? "#333333" : "transparent"; radius: 4 }
             onClicked: deleteConfirmDialog.open()
         }
         MenuSeparator {
             visible: root.showDefaultContextMenu && root.contextMenuExtra.length > 0
             height: root.showDefaultContextMenu && root.contextMenuExtra.length > 0 ? implicitHeight : 0
-            contentItem: Rectangle { implicitHeight: 1; implicitWidth: 130; color: "#444466" }
+            contentItem: Rectangle { implicitHeight: 1; implicitWidth: 130; color: "#3A3A3A" }
         }
         Instantiator {
             model: root.contextMenuExtra
@@ -626,7 +626,7 @@ ColumnLayout {
                 text: modelData.text || ""
                 onClicked: { if (modelData.onClicked) modelData.onClicked(); root.rightClickedTrack = null }
                 contentItem: Label { text: modelData.text || ""; font.family: fontFamily; font.pixelSize: 14; color: "#cccccc"; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
-                background: Rectangle { color: parent.hovered ? "#3a3a5a" : "transparent"; radius: 4 }
+                background: Rectangle { color: parent.hovered ? "#333333" : "transparent"; radius: 4 }
             }
             onObjectAdded: function(index, object) { contextMenu.insertItem(contextMenu.count, object) }
             onObjectRemoved: function(index, object) { contextMenu.removeItem(object) }
@@ -642,7 +642,7 @@ ColumnLayout {
         width: 320
         x: (parent.width - width) / 2
         y: (parent.height - height) / 2
-        background: Rectangle { color: "#2a2a3a"; border.color: "#444466"; radius: 8 }
+        background: Rectangle { color: "#222222"; border.color: "#3A3A3A"; radius: 8 }
         contentItem: Label {
             text: root.manualSortDisabledMessage
             font.family: fontFamily; font.pixelSize: 14; color: "#c0c0c0"
@@ -672,9 +672,9 @@ ColumnLayout {
         Overlay.modal: Rectangle { color: "transparent" }
 
         background: Rectangle {
-            color: "#2a2a48"
+            color: "#222222"
             radius: 10
-            border.color: "#444466"
+            border.color: "#3A3A3A"
             border.width: 1
         }
 
@@ -714,8 +714,8 @@ ColumnLayout {
 
                 Rectangle {
                     Layout.preferredHeight: 34; Layout.preferredWidth: 76; radius: 6
-                    color: switchCancelMA.containsMouse ? "#3a3a5a" : "#333350"
-                    border.color: "#444466"; border.width: 1
+                    color: switchCancelMA.containsMouse ? "#333333" : "#1E1E1E"
+                    border.color: "#3A3A3A"; border.width: 1
                     Label { text: "取消"; anchors.centerIn: parent; font.family: fontFamily; font.pixelSize: 13; color: "#999" }
                     MouseArea {
                         id: switchCancelMA; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
@@ -761,9 +761,9 @@ ColumnLayout {
         Overlay.modal: Rectangle { color: "transparent" }
 
         background: Rectangle {
-            color: "#2a2a48"
+            color: "#222222"
             radius: 10
-            border.color: "#444466"
+            border.color: "#3A3A3A"
             border.width: 1
         }
 
@@ -804,8 +804,8 @@ ColumnLayout {
 
                 Rectangle {
                     Layout.preferredHeight: 34; Layout.preferredWidth: 80; radius: 6
-                    color: delCancelMA.containsMouse ? "#3a3a5a" : "#333350"
-                    border.color: "#444466"; border.width: 1
+                    color: delCancelMA.containsMouse ? "#333333" : "#1E1E1E"
+                    border.color: "#3A3A3A"; border.width: 1
                     Label { text: "取消"; anchors.centerIn: parent; font.family: fontFamily; font.pixelSize: 13; color: "#999" }
                     MouseArea {
                         id: delCancelMA; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor

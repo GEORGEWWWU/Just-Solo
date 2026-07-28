@@ -216,7 +216,7 @@ Window {
         Rectangle {
             Layout.preferredWidth: sidebarWidth
             Layout.fillHeight: true
-            color: "#222236"
+            color: "#181818"
 
             ColumnLayout {
                 anchors.top: parent.top
@@ -272,7 +272,7 @@ Window {
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 1
-                    color: "#3a3a55"
+                    color: "#3A3A3A"
                 }
 
                 Item { Layout.preferredHeight: 14 }
@@ -282,8 +282,8 @@ Window {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 42
                     radius: 6
-                    color: currentMenu === "settings" ? "#36365a"
-                         : (settingsTopMouse.containsMouse ? "#2a2a48" : "transparent")
+                    color: currentMenu === "settings" ? "#2C2C2C"
+                         : (settingsTopMouse.containsMouse ? "#222222" : "transparent")
 
                     Row {
                         anchors.verticalCenter: parent.verticalCenter
@@ -293,9 +293,12 @@ Window {
 
                         Rectangle {
                             width: 34; height: 34; radius: 4; color: "transparent"
-                            Label {
+                            Image {
                                 anchors.centerIn: parent
-                                text: "⚙"; font.family: appFont.name; font.pixelSize: 22; color: "#888"
+                                source: "qrc:/qt/qml/JustSolo/data/image/setting.png"
+                                sourceSize.width: 28
+                                sourceSize.height: 28
+                                fillMode: Image.PreserveAspectFit
                             }
                         }
 
@@ -322,7 +325,7 @@ Window {
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 1
-                    color: "#3a3a55"
+                    color: "#3A3A3A"
                 }
 
                 Item { Layout.preferredHeight: 14 }
@@ -414,11 +417,12 @@ Window {
                         Row {
                             anchors.centerIn: parent
                             spacing: 6
-                            Label {
-                                text: "←"
-                                font.family: appFont.name
-                                font.pixelSize: 14
-                                color: "#888"
+                            Image {
+                                anchors.verticalCenter: parent.verticalCenter
+                                source: "qrc:/qt/qml/JustSolo/data/image/back.png"
+                                sourceSize.width: 14
+                                sourceSize.height: 14
+                                fillMode: Image.PreserveAspectFit
                             }
                             Label {
                                 text: "退出设置"
@@ -450,8 +454,7 @@ Window {
                         width: ListView.view.width
                         height: 55
                         radius: 6
-                        color: mainWindow.currentMenu === "customPlaylist" && mainWindow.currentCustomPlaylistIndex === index ? "#36365a"
-                             : (plMA.containsMouse ? "#2a2a48" : "transparent")
+                        color: mainWindow.currentMenu === "customPlaylist" && mainWindow.currentCustomPlaylistIndex === index ? "#2C2C2C" : (plMA.containsMouse ? "#222222" : "transparent")
 
                         RowLayout {
                             anchors.verticalCenter: parent.verticalCenter
@@ -502,7 +505,7 @@ Window {
                         Menu {
                             id: plContextMenu
                             property QtObject win: mainWindow
-                            background: Rectangle { color: "#2a2a3a"; border.color: "#444466"; radius: 6; implicitWidth: 150 }
+                            background: Rectangle { color: "#222222"; border.color: "#3A3A3A"; radius: 6; implicitWidth: 150 }
 
                             MenuItem {
                                 text: "添加本地音乐"
@@ -512,7 +515,7 @@ Window {
                                     font.family: appFont.name; font.pixelSize: 14; color: "#cccccc"
                                     verticalAlignment: Text.AlignVCenter; leftPadding: 12
                                 }
-                                background: Rectangle { color: parent.hovered ? "#3a3a5a" : "transparent"; radius: 4 }
+                                background: Rectangle { color: parent.hovered ? "#333333" : "transparent"; radius: 4 }
                                 onClicked: fileDialog.open()
                             }
 
@@ -524,7 +527,7 @@ Window {
                                     font.family: appFont.name; font.pixelSize: 14; color: "#cccccc"
                                     verticalAlignment: Text.AlignVCenter; leftPadding: 12
                                 }
-                                background: Rectangle { color: parent.hovered ? "#3a3a5a" : "transparent"; radius: 4 }
+                                background: Rectangle { color: parent.hovered ? "#333333" : "transparent"; radius: 4 }
                                 enabled: musicManager.library.length > 0
                                 onClicked: {
                                     var targetIdx = plContextMenu.win._rightClickedPlaylistIndex
@@ -545,7 +548,7 @@ Window {
                                     font.family: appFont.name; font.pixelSize: 14; color: "#cccccc"
                                     verticalAlignment: Text.AlignVCenter; leftPadding: 12
                                 }
-                                background: Rectangle { color: parent.hovered ? "#3a3a5a" : "transparent"; radius: 4 }
+                                background: Rectangle { color: parent.hovered ? "#333333" : "transparent"; radius: 4 }
                                 onClicked: {
                                     renameField.text = musicManager.customPlaylists[plContextMenu.win._rightClickedPlaylistIndex]?.name || ""
                                     renameDialog.open()
@@ -560,7 +563,7 @@ Window {
                                     font.family: appFont.name; font.pixelSize: 14; color: "#cc5555"
                                     verticalAlignment: Text.AlignVCenter; leftPadding: 12
                                 }
-                                background: Rectangle { color: parent.hovered ? "#3a3a5a" : "transparent"; radius: 4 }
+                                background: Rectangle { color: parent.hovered ? "#333333" : "transparent"; radius: 4 }
                                 onClicked: {
                                     if (plContextMenu.win._rightClickedPlaylistIndex >= 0) {
                                         musicManager.deleteCustomPlaylist(plContextMenu.win._rightClickedPlaylistIndex)
@@ -593,7 +596,7 @@ Window {
                 height: 50
                 radius: 6
                 z: 10
-                color: sidebarCreateMA.containsMouse ? "#2a2a48" : "transparent"
+                color: sidebarCreateMA.containsMouse ? "#222222" : "transparent"
 
                 Row {
                     anchors.verticalCenter: parent.verticalCenter
@@ -636,7 +639,7 @@ Window {
         Rectangle {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            color: "#282844"
+            color: "#1E1E1E"
 
             ColumnLayout {
                 anchors.fill: parent
@@ -657,8 +660,8 @@ Window {
                         Layout.minimumWidth: 200
                         Layout.preferredHeight: 42
                         radius: 8
-                        color: "#333350"
-                        border.color: "#444466"
+                        color: "#1E1E1E"
+                        border.color: "#3A3A3A"
                         border.width: 1
 
                         RowLayout {
@@ -708,8 +711,8 @@ Window {
                                 visible: searchInput.text.trim().length > 0 && !musicManager.isLoading
 
                                 background: Rectangle {
-                                    color: "#222236"
-                                    border.color: "#444466"
+                                    color: "#181818"
+                                    border.color: "#3A3A3A"
                                     border.width: 1
                                     radius: 8
                                 }
@@ -726,12 +729,12 @@ Window {
                                         delegate: Rectangle {
                                             width: searchResultCol.width
                                             height: 42
-                                            color: searchHover.containsMouse ? "#36365a" : "transparent"
+                                            color: searchHover.containsMouse ? "#2C2C2C" : "transparent"
 
                                             Rectangle {
                                                 anchors.top: parent.top
                                                 anchors.left: parent.left; anchors.right: parent.right
-                                                height: 1; color: "#2a2a48"
+                                                height: 1; color: "#222222"
                                                 visible: index > 0
                                             }
 
@@ -948,7 +951,7 @@ Window {
                         Layout.preferredWidth: 140
                         Layout.preferredHeight: 36
                         radius: 6
-                        color: addMusicBtn.containsMouse ? "#4a4a6a" : "#3a3a5a"
+                        color: addMusicBtn.containsMouse ? "#4A4A4A" : "#333333"
                         Behavior on color { ColorAnimation { duration: 120 } }
                         visible: currentMenu === "home"
                         Label {
@@ -1157,7 +1160,7 @@ Window {
                 }
 
                 Rectangle {
-                    width: 320; height: 6; radius: 3; color: "#333350"
+                    width: 320; height: 6; radius: 3; color: "#1E1E1E"
                     Layout.alignment: Qt.AlignHCenter
                     Rectangle {
                         height: parent.height; radius: 3; color: "#00d4ff"
@@ -1201,9 +1204,7 @@ Window {
         anchors.left: parent.left
         anchors.right: parent.right
         height: playerBarHeight
-        color: "#222236"
-        border.color: "#353550"
-        border.width: 1
+        color: "#181818"
 
 
         property double progressFraction: musicManager.duration > 0 ? musicManager.position / Math.max(1, musicManager.duration) : 0
@@ -1224,7 +1225,7 @@ Window {
 
                 Rectangle {
                     id: playerCoverRect
-                    width: 48; height: 48; radius: 6; color: "#3a3a55"
+                    width: 48; height: 48; radius: 6; color: "#3A3A3A"
 
                     Image {
                         anchors.fill: parent
@@ -1251,8 +1252,8 @@ Window {
                         anchors.fill: parent
                         cursorShape: Qt.PointingHandCursor
                         hoverEnabled: true
-                        onEntered: playerCoverRect.color = "#4a4a6a"
-                        onExited: playerCoverRect.color = "#3a3a55"
+                        onEntered: playerCoverRect.color = "#4A4A4A"
+                        onExited: playerCoverRect.color = "#3A3A3A"
                         onClicked: {
                             if (musicManager.currentIndex >= 0)
                                 showPlayerDetail = true
@@ -1309,7 +1310,7 @@ Window {
 
                 // 播放/暂停
                 Rectangle {
-                    width: 42; height: 42; radius: 21; color: "#444466"
+                    width: 42; height: 42; radius: 21; color: "#3A3A3A"
                     Behavior on color { ColorAnimation { duration: 120 } }
                     Image {
                         source: "qrc:/qt/qml/JustSolo/data/image/play.png"
@@ -1384,9 +1385,9 @@ Window {
                         closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
 
                         background: Rectangle {
-                            radius: 8; color: "#2a2a48"
+                            radius: 8; color: "#222222"
                             opacity: musicManager.menuOpacity
-                            border.color: "#444466"; border.width: 1
+                            border.color: "#3A3A3A"; border.width: 1
                         }
 
                         RowLayout {
@@ -1414,7 +1415,7 @@ Window {
                                 background: Rectangle {
                                     implicitHeight: 4
                                     radius: 2
-                                    color: "#3a3a55"
+                                    color: "#3A3A3A"
                                     Rectangle {
                                         width: volumeSlider.visualPosition * parent.width
                                         height: parent.height
@@ -1473,7 +1474,7 @@ Window {
 
                 Rectangle {
                     id: barProgressTrack
-                    Layout.fillWidth: true; Layout.preferredHeight: 4; radius: 2; color: "#3a3a55"
+                    Layout.fillWidth: true; Layout.preferredHeight: 4; radius: 2; color: "#3A3A3A"
                     Rectangle {
                         id: barProgressFill
                         readonly property real autoRatio: Math.min(1, playerBar.progressFraction)
@@ -1548,9 +1549,9 @@ Window {
         Overlay.modal: Rectangle { color: "transparent" }
 
         background: Rectangle {
-            color: "#2a2a48"
+            color: "#222222"
             radius: 10
-            border.color: "#444466"
+            border.color: "#3A3A3A"
             border.width: 1
         }
 
@@ -1580,8 +1581,8 @@ Window {
                 verticalAlignment: TextInput.AlignVCenter
                 background: Rectangle {
                     radius: 6
-                    color: "#333350"
-                    border.color: "#555577"
+                    color: "#1E1E1E"
+                    border.color: "#3A3A3A"
                     border.width: 1
                 }
                 Keys.onReturnPressed: doCreateList()
@@ -1604,8 +1605,8 @@ Window {
 
                 Rectangle {
                     Layout.preferredHeight: 34; Layout.preferredWidth: 76; radius: 6
-                    color: cancelMA.containsMouse ? "#3a3a5a" : "#333350"
-                    border.color: "#444466"; border.width: 1
+                    color: cancelMA.containsMouse ? "#333333" : "#1E1E1E"
+                    border.color: "#3A3A3A"; border.width: 1
                     Label { text: "取消"; anchors.centerIn: parent; font.family: appFont.name; font.pixelSize: 13; color: "#999" }
                     MouseArea {
                         id: cancelMA; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
@@ -1638,9 +1639,9 @@ Window {
         Overlay.modal: Rectangle { color: "transparent" }
 
         background: Rectangle {
-            color: "#2a2a48"
+            color: "#222222"
             radius: 10
-            border.color: "#444466"
+            border.color: "#3A3A3A"
             border.width: 1
         }
 
@@ -1668,8 +1669,8 @@ Window {
                 color: "#ddd"
                 background: Rectangle {
                     radius: 6
-                    color: "#333350"
-                    border.color: "#555577"
+                    color: "#1E1E1E"
+                    border.color: "#3A3A3A"
                     border.width: 1
                 }
                 onTextChanged: renameHint.text = ""
@@ -1693,8 +1694,8 @@ Window {
 
                 Rectangle {
                     Layout.preferredHeight: 34; Layout.preferredWidth: 76; radius: 6
-                    color: renameCancelMA.containsMouse ? "#3a3a5a" : "#333350"
-                    border.color: "#444466"; border.width: 1
+                    color: renameCancelMA.containsMouse ? "#333333" : "#1E1E1E"
+                    border.color: "#3A3A3A"; border.width: 1
                     Label { text: "取消"; anchors.centerIn: parent; font.family: appFont.name; font.pixelSize: 13; color: "#999" }
                     MouseArea {
                         id: renameCancelMA; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
@@ -1730,7 +1731,7 @@ Window {
 
         Overlay.modal: Rectangle { color: "#80000000" }
 
-        background: Rectangle { color: "#2a2a48"; radius: 10; border.color: "#444466"; border.width: 1 }
+        background: Rectangle { color: "#222222"; radius: 10; border.color: "#3A3A3A"; border.width: 1 }
 
         contentItem: ColumnLayout {
             spacing: 0
@@ -1738,8 +1739,8 @@ Window {
             // 标题栏
             Rectangle {
                 Layout.fillWidth: true; Layout.preferredHeight: 48; radius: 10
-                color: "#333355"
-                Rectangle { width: parent.width; height: 1; color: "#444466"; anchors.bottom: parent.bottom }
+                color: "#2C2C2C"
+                Rectangle { width: parent.width; height: 1; color: "#3A3A3A"; anchors.bottom: parent.bottom }
 
                 RowLayout {
                     anchors.fill: parent; anchors.margins: 16; spacing: 8
@@ -1766,7 +1767,7 @@ Window {
             // 搜索栏
             Rectangle {
                 Layout.fillWidth: true; Layout.preferredHeight: 40
-                color: "#333350"
+                color: "#1E1E1E"
                 RowLayout {
                     anchors.fill: parent; anchors.margins: 8; spacing: 8
                     TextField {
@@ -1776,7 +1777,7 @@ Window {
                         placeholderTextColor: "#888"
                         font.family: appFont.name; font.pixelSize: 13; color: "#ddd"
                         leftPadding: 10
-                        background: Rectangle { radius: 6; color: "#3a3a5a"; border.color: "#555577" }
+                        background: Rectangle { radius: 6; color: "#333333"; border.color: "#3A3A3A" }
                         onTextChanged: {
                             // 独立过滤，不碰全局 searchText/updateSearch
                             var query = text.toLowerCase().trim()
@@ -1799,7 +1800,7 @@ Window {
                     // 全选/取消
                     Rectangle {
                         Layout.preferredHeight: 28; Layout.preferredWidth: 50; radius: 6
-                        color: selectAllMA.containsMouse ? "#4a4a6a" : "#3a3a5a"
+                        color: selectAllMA.containsMouse ? "#4A4A4A" : "#333333"
                         Label {
                             anchors.centerIn: parent
                             text: {
@@ -1833,10 +1834,10 @@ Window {
 
                 ScrollBar.vertical: ScrollBar {
                     policy: ScrollBar.AsNeeded; width: 10
-                    background: Rectangle { implicitWidth: 10; radius: 5; color: "#2a2a3a" }
+                    background: Rectangle { implicitWidth: 10; radius: 5; color: "#222222" }
                     contentItem: Rectangle {
                         implicitWidth: 10; radius: 5
-                        color: libThumbHover.containsMouse ? "#7777aa" : "#555577"
+                        color: libThumbHover.containsMouse ? "#777777" : "#3A3A3A"
                         Behavior on color { ColorAnimation { duration: 150 } }
                         MouseArea {
                             id: libThumbHover
@@ -1883,7 +1884,7 @@ Window {
                         Rectangle {
                             Layout.preferredWidth: 20; Layout.preferredHeight: 20; radius: 4
                             color: libItemRoot._sel ? "#00d4ff" : "transparent"
-                            border.color: libItemRoot._iai ? "#555577" : (libItemRoot._sel ? "#00d4ff" : "#666")
+                            border.color: libItemRoot._iai ? "#3A3A3A" : (libItemRoot._sel ? "#00d4ff" : "#666")
                             border.width: libItemRoot._sel ? 0 : 1
                             Label {
                                 anchors.centerIn: parent
@@ -1938,8 +1939,8 @@ Window {
             // 底部按钮
             Rectangle {
                 Layout.fillWidth: true; Layout.preferredHeight: 52
-                color: "#2a2a48"
-                Rectangle { width: parent.width; height: 1; color: "#444466"; anchors.top: parent.top }
+                color: "#222222"
+                Rectangle { width: parent.width; height: 1; color: "#3A3A3A"; anchors.top: parent.top }
 
                 RowLayout {
                     anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter
@@ -1947,8 +1948,8 @@ Window {
 
                     Rectangle {
                         Layout.preferredHeight: 34; Layout.preferredWidth: 80; radius: 6
-                        color: cancelImportMA.containsMouse ? "#3a3a5a" : "#333350"
-                        border.color: "#444466"; border.width: 1
+                        color: cancelImportMA.containsMouse ? "#333333" : "#1E1E1E"
+                        border.color: "#3A3A3A"; border.width: 1
                         Label { anchors.centerIn: parent; text: "取消"; font.family: appFont.name; font.pixelSize: 13; color: "#999" }
                         MouseArea {
                             id: cancelImportMA; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
@@ -1958,8 +1959,8 @@ Window {
                     Rectangle {
                         Layout.preferredHeight: 34; Layout.preferredWidth: 100; radius: 6
                         property bool _canImport: { mainWindow._libSelectedVersion; return mainWindow._countLibSelected() > 0 }
-                        color: _canImport ? (confirmImportMA.containsMouse ? "#4a6a8a" : "#3a5a7a") : "#333350"
-                        border.color: _canImport ? "#555577" : "#444466"
+                        color: _canImport ? (confirmImportMA.containsMouse ? "#4a6a8a" : "#3a5a7a") : "#1E1E1E"
+                        border.color: _canImport ? "#3A3A3A" : "#3A3A3A"
                         border.width: 1
                         Label {
                             anchors.centerIn: parent
@@ -2079,7 +2080,7 @@ Window {
         id: dropOverlay
         anchors.fill: parent
         z: 9998
-        color: "#000000A0"
+        color: "#121212A0"
         visible: false
 
         Behavior on opacity { NumberAnimation { duration: 150 } }
