@@ -148,7 +148,8 @@ target_compile_definitions(JustSolo PRIVATE
 
 # 自动部署 Qt 依赖及 QML 插件
 add_custom_command(TARGET JustSolo POST_BUILD
-    COMMAND "F:/QT/6.11.1/msvc2022_64/bin/windeployqt.exe"
+#   COMMAND "F:/QT/6.11.1/msvc2022_64/bin/windeployqt.exe"
+    COMMAND "C:/Qt/6.8.3/msvc2022_64/bin/windeployqt.exe"
             --qmldir "${CMAKE_SOURCE_DIR}/src/qml"
             "$<TARGET_FILE:JustSolo>"
 )
