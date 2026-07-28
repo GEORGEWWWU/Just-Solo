@@ -45,7 +45,7 @@ Rectangle {
             anchors.centerIn: parent
             text: "放置到此处"
             font.family: songRow.fontFamily
-            font.pixelSize: 14
+            font.pixelSize: 15
             color: "#777"
             visible: parent.height > 20
         }
@@ -162,7 +162,7 @@ Rectangle {
             Layout.alignment: Qt.AlignVCenter
             Label {
                 text: model.name || ""
-                font.family: songRow.fontFamily; font.pixelSize: 14
+                font.family: songRow.fontFamily; font.pixelSize: 15
                 font.bold: true; color: "#d4d4d4"
                 elide: Text.ElideRight
                 width: parent.width
@@ -184,21 +184,21 @@ Rectangle {
 
         Label {
             text: model.artist || "未知"
-            font.family: songRow.fontFamily; font.pixelSize: 14; color: "#969696"
+            font.family: songRow.fontFamily; font.pixelSize: 15; color: "#969696"
             elide: Text.ElideRight; verticalAlignment: Text.AlignVCenter
             Layout.fillWidth: true; Layout.fillHeight: true; Layout.preferredWidth: songRow.colArtist
         }
 
         Label {
             text: model.album || ""
-            font.family: songRow.fontFamily; font.pixelSize: 14; color: "#888888"
+            font.family: songRow.fontFamily; font.pixelSize: 15; color: "#888888"
             elide: Text.ElideRight; verticalAlignment: Text.AlignVCenter
             Layout.fillWidth: true; Layout.fillHeight: true; Layout.preferredWidth: songRow.colAlbum
         }
 
         Label {
             text: model.durationText || ""
-            font.family: songRow.fontFamily; font.pixelSize: 14; color: "#969696"
+            font.family: songRow.fontFamily; font.pixelSize: 15; color: "#969696"
             verticalAlignment: Text.AlignVCenter; horizontalAlignment: Text.AlignRight
             Layout.fillHeight: true; Layout.preferredWidth: songRow.colDuration
         }

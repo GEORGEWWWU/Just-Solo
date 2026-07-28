@@ -12,6 +12,8 @@ release/
 
 # CMake
 CMakeUserPresets.json
+CMakePresets.json
+CMakeSettings.json
 
 # Qt
 *.pro.user
