@@ -70,7 +70,7 @@ static void customizeTitleBar(HWND hwnd) {
 
     // Win11+: 边框同侧边栏背景（视觉无边框）
     if (isWindows11()) {
-        COLORREF caption = RGB(30, 30, 30, 1);
+        COLORREF caption = RGB(30, 30, 30);
         COLORREF text    = RGB(204, 204, 204);
         COLORREF border  = caption;            // 与背景同色
         DwmSetWindowAttribute(hwnd, DWMWA_CAPTION_COLOR, &caption, sizeof(caption));
