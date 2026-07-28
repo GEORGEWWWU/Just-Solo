@@ -51,6 +51,7 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 [Files]
 Source: "F:\Coding\1-Code\C++\Just-Solo\release\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "F:\Coding\1-Code\C++\Just-Solo\release\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "F:\Coding\1-Code\C++\Just-Solo\third_party\curl\bin\libcurl-x64.dll"; DestDir: "{app}"; Flags: ignoreversion
 [code]
 
 [Icons]
