@@ -103,6 +103,8 @@ qt_add_qml_module(JustSolo
         data/font/HarmonyOS_Sans_SC_Regular.ttf
         data/image/setting.png
         data/image/back.png
+        data/image/prve.png
+        data/image/next.png
 )
 
 # 链接 Qt 库
