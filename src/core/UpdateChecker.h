@@ -15,6 +15,7 @@ class UpdateChecker : public QObject
     Q_PROPERTY(QString releaseDate READ releaseDate NOTIFY infoChanged)
     Q_PROPERTY(QString downloadUrl READ downloadUrl NOTIFY infoChanged)
     Q_PROPERTY(QString githubDownloadUrl READ githubDownloadUrl NOTIFY infoChanged)
+    Q_PROPERTY(QString gitcodeDownloadUrl READ gitcodeDownloadUrl NOTIFY infoChanged)
     Q_PROPERTY(bool isNewer READ isNewer NOTIFY infoChanged)
     Q_PROPERTY(bool checking READ checking NOTIFY checkingChanged)
     Q_PROPERTY(bool downloading READ downloading NOTIFY downloadingChanged)
@@ -29,6 +30,7 @@ public:
     QString releaseDate() const { return m_releaseDate; }
     QString downloadUrl() const { return m_downloadUrl; }
     QString githubDownloadUrl() const;
+    QString gitcodeDownloadUrl() const { return m_gitcodeDownloadUrl; }
     bool isNewer() const { return m_isNewer; }
     bool checking() const { return m_checking; }
     bool downloading() const { return m_downloading; }
@@ -62,6 +64,7 @@ private:
     QString m_changelog;
     QString m_releaseDate;
     QString m_downloadUrl;
+    QString m_gitcodeDownloadUrl;
     bool m_isNewer = false;
     bool m_checking = false;
     bool m_downloading = false;

@@ -38,10 +38,14 @@ void UpdateChecker::loadCachedInfo()
     if (!doc.isObject()) return;
 
     QJsonObject root = doc.object();
-    m_latestVersion = root.value("latestVersion").toString();
+    m_latestVersion = root.value("version").toString();
     m_changelog = root.value("changelog").toString();
-    m_releaseDate = root.value("releaseDate").toString();
-    m_downloadUrl = root.value("downloadUrl").toString();
+    m_releaseDate = root.value("updated_at").toString();
+    m_gitcodeDownloadUrl = root.value("gitcode_exe").toString();
+    m_downloadUrl = root.value("github_exe").toString();
+    // 优先使用 gitcode_exe（国内镜像，下载更快）
+    if (!m_gitcodeDownloadUrl.isEmpty())
+        m_downloadUrl = m_gitcodeDownloadUrl;
     m_isNewer = compareVersions(m_currentVersion, m_latestVersion);
 
     if (!m_latestVersion.isEmpty())
@@ -51,10 +55,11 @@ void UpdateChecker::loadCachedInfo()
 void UpdateChecker::saveCachedInfo()
 {
     QJsonObject root;
-    root["latestVersion"] = m_latestVersion;
+    root["version"] = m_latestVersion;
     root["changelog"] = m_changelog;
-    root["releaseDate"] = m_releaseDate;
-    root["downloadUrl"] = m_downloadUrl;
+    root["updated_at"] = m_releaseDate;
+    root["github_exe"] = m_downloadUrl;
+    root["gitcode_exe"] = m_gitcodeDownloadUrl;
 
     QFile file(cacheFilePath());
     if (file.open(QIODevice::WriteOnly))
@@ -67,6 +72,7 @@ void UpdateChecker::clearInfo()
     m_changelog.clear();
     m_releaseDate.clear();
     m_downloadUrl.clear();
+    m_gitcodeDownloadUrl.clear();
     m_isNewer = false;
     emit infoChanged();
 
@@ -113,7 +119,11 @@ void UpdateChecker::checkForUpdates()
         m_latestVersion = root.value("version").toString();
         m_changelog = root.value("changelog").toString().trimmed();
         m_releaseDate = root.value("updated_at").toString();
+        m_gitcodeDownloadUrl = root.value("gitcode_exe").toString();
         m_downloadUrl = root.value("github_exe").toString();
+        // 优先使用 gitcode_exe（国内镜像，下载更快）
+        if (!m_gitcodeDownloadUrl.isEmpty())
+            m_downloadUrl = m_gitcodeDownloadUrl;
 
         // 版本比较
         m_isNewer = compareVersions(m_currentVersion, m_latestVersion);
