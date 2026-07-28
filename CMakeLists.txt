@@ -123,7 +123,8 @@ if(WIN32)
 endif()
 
 # ---- libcurl（用于软件更新检查，替代 Qt 网络栈）----
-set(CURL_DIR "F:/Users/ZZJ-JACK/Downloads/curl-8.21.0_5-win64-mingw")
+# 使用项目内 third_party 依赖，不依赖外部路径
+set(CURL_DIR "${CMAKE_SOURCE_DIR}/third_party/curl")
 target_include_directories(JustSolo PRIVATE "${CURL_DIR}/include")
 target_link_libraries(JustSolo PRIVATE "${CURL_DIR}/lib/libcurl-x64.lib")
 # 运行时复制 DLL 到输出目录
