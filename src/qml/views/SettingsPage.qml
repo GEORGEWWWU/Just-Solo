@@ -67,9 +67,9 @@ Rectangle {
                     anchors.fill: parent; anchors.margins: 20; spacing: 6
                     RowLayout {
                         Layout.fillWidth: true
-                        Label { text: "软件版本"; font.family: updateFont.name; font.pixelSize: 14; color: "#ccc"; Layout.preferredWidth: 72 }
+                        Label { text: "软件版本"; font.family: updateFont.name; font.pixelSize: 15; color: "#ccc"; Layout.preferredWidth: 72 }
                         Item { Layout.fillWidth: true }
-                        Label { text: APP_VERSION; font.family: updateFont.name; font.pixelSize: 14; font.bold: true; color: "#e8e8e8" }
+                        Label { text: APP_VERSION; font.family: updateFont.name; font.pixelSize: 15; font.bold: true; color: "#e8e8e8" }
                     }
                     RowLayout {
                         Layout.fillWidth: true
@@ -91,7 +91,7 @@ Rectangle {
                 Rectangle {
                     Layout.preferredWidth: 160; Layout.preferredHeight: 40
                     radius: 8; color: "#333333"
-                    Label { anchors.centerIn: parent; text: "检查更新"; font.family: updateFont.name; font.pixelSize: 14; color: "#e8e8e8" }
+                    Label { anchors.centerIn: parent; text: "检查更新"; font.family: updateFont.name; font.pixelSize: 15; color: "#e8e8e8" }
                     MouseArea {
                         anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
                         onClicked: checkUpdate()
@@ -130,7 +130,7 @@ Rectangle {
                     Layout.preferredWidth: 140; Layout.preferredHeight: 38; radius: 8
                     visible: updateChecker.isNewer && !updateChecker.downloading
                     color: dlBtnMA.containsMouse ? "#4a8a4a" : "#3a7a3a"
-                    Label { anchors.centerIn: parent; text: "下载安装程序"; font.family: updateFont.name; font.pixelSize: 14; color: "#e8e8e8" }
+                    Label { anchors.centerIn: parent; text: "下载安装程序"; font.family: updateFont.name; font.pixelSize: 15; color: "#e8e8e8" }
                     MouseArea {
                         id: dlBtnMA
                         anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
@@ -144,7 +144,7 @@ Rectangle {
                     Layout.preferredWidth: 140; Layout.preferredHeight: 38; radius: 8
                     visible: updateChecker.downloading
                     color: cancelBtnMA.containsMouse ? "#6a3a3a" : "#5a2a2a"
-                    Label { anchors.centerIn: parent; text: "取消下载"; font.family: updateFont.name; font.pixelSize: 14; color: "#ef4444" }
+                    Label { anchors.centerIn: parent; text: "取消下载"; font.family: updateFont.name; font.pixelSize: 15; color: "#ef4444" }
                     MouseArea {
                         id: cancelBtnMA
                         anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
@@ -300,7 +300,7 @@ Rectangle {
                     Layout.preferredWidth: 160; Layout.preferredHeight: 38; radius: 8
                     visible: false
                     color: ofBtnMA.containsMouse ? "#4a6a8a" : "#3a5a7a"
-                    Label { anchors.centerIn: parent; text: "打开文件夹"; font.family: updateFont.name; font.pixelSize: 14; color: "#e8e8e8" }
+                    Label { anchors.centerIn: parent; text: "打开文件夹"; font.family: updateFont.name; font.pixelSize: 15; color: "#e8e8e8" }
                     MouseArea {
                         id: ofBtnMA
                         anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
@@ -387,7 +387,7 @@ Rectangle {
                     Layout.fillWidth: true
                     Label {
                         text: "歌词预读偏移"
-                        font.family: fontFamily; font.pixelSize: 14; color: "#e8e8e8"
+                        font.family: fontFamily; font.pixelSize: 15; color: "#e8e8e8"
                     }
                     Item { Layout.fillWidth: true }
                     Label {
@@ -396,7 +396,7 @@ Rectangle {
                             if (off === 0) return "0ms (默认)"
                             return (off > 0 ? "+" : "") + off + "ms"
                         }
-                        font.family: fontFamily; font.pixelSize: 14; color: "#00d4ff"
+                        font.family: fontFamily; font.pixelSize: 15; color: "#00d4ff"
                     }
                 }
 
@@ -446,7 +446,7 @@ Rectangle {
 
                 RowLayout {
                     Layout.fillWidth: true
-                    Label { text: "其他列表播放时首页是否显示对应歌曲"; font.family: fontFamily; font.pixelSize: 14; color: "#e8e8e8" }
+                    Label { text: "其他列表播放时首页是否显示对应歌曲"; font.family: fontFamily; font.pixelSize: 15; color: "#e8e8e8" }
                     Item { Layout.fillWidth: true }
                     Switch {
                         Layout.alignment: Qt.AlignVCenter
@@ -500,7 +500,7 @@ Rectangle {
 
                 Label {
                     text: "全局快捷键"
-                    font.family: fontFamily; font.pixelSize: 14; font.bold: true; color: "#f0f0f0"
+                    font.family: fontFamily; font.pixelSize: 15; font.bold: true; color: "#f0f0f0"
                 }
 
                 // 三行快捷键
@@ -530,7 +530,7 @@ Rectangle {
 
                                 Label {
                                     text: modelData.label
-                                    font.family: fontFamily; font.pixelSize: 14; color: "#ccc"
+                                    font.family: fontFamily; font.pixelSize: 15; color: "#ccc"
                                     Layout.preferredWidth: 100
                                 }
 
@@ -681,12 +681,12 @@ Rectangle {
                     Layout.fillWidth: true
                     Label {
                         text: "播放详情页透明度"
-                        font.family: fontFamily; font.pixelSize: 14; color: "#e8e8e8"
+                        font.family: fontFamily; font.pixelSize: 15; color: "#e8e8e8"
                     }
                     Item { Layout.fillWidth: true }
                     Label {
                         text: Math.round((musicManager.detailOpacity || 0.85) * 100) + "%"
-                        font.family: fontFamily; font.pixelSize: 14; color: "#00d4ff"
+                        font.family: fontFamily; font.pixelSize: 15; color: "#00d4ff"
                     }
                 }
 
@@ -729,7 +729,7 @@ Rectangle {
                     Layout.fillWidth: true
                     Label {
                         text: "播放详情页循环模式菜单透明度"
-                        font.family: fontFamily; font.pixelSize: 14; color: "#e8e8e8"
+                        font.family: fontFamily; font.pixelSize: 15; color: "#e8e8e8"
                     }
                     Item { Layout.fillWidth: true }
                     Label {
@@ -737,7 +737,7 @@ Rectangle {
                             var op = Number(musicManager.menuOpacity)
                             return Math.round((op > 0 ? op : 0.8) * 100) + "%"
                         }
-                        font.family: fontFamily; font.pixelSize: 14; color: "#00d4ff"
+                        font.family: fontFamily; font.pixelSize: 15; color: "#00d4ff"
                     }
                 }
 
@@ -785,7 +785,7 @@ Rectangle {
                     spacing: 2
                     Label {
                         text: "关闭窗口时最小化到系统托盘"
-                        font.family: fontFamily; font.pixelSize: 14; color: "#e8e8e8"
+                        font.family: fontFamily; font.pixelSize: 15; color: "#e8e8e8"
                     }
                     Label {
                         text: "关闭后音乐继续在后台播放，可通过托盘图标恢复"
@@ -831,7 +831,7 @@ Rectangle {
         anchors.fill: parent; spacing: 0
         visible: settingsSubMenu === "about"
         Item { Layout.preferredHeight: 8 }
-        Label { text: "Just Solo - 轻量级桌面音乐播放器"; font.family: fontFamily; font.pixelSize: 14; color: "#ccc" }
+        Label { text: "Just Solo - 轻量级桌面音乐播放器"; font.family: fontFamily; font.pixelSize: 15; color: "#ccc" }
         Item { Layout.preferredHeight: 4 }
         Label { text: "作者: ZZJ-JACK"; font.family: fontFamily; font.pixelSize: 13; color: "#999" }
         Label { text: `<a href="https://zzjjack.us.kg">https://zzjjack.us.kg</a>`; textFormat: Text.RichText; font.family: fontFamily; font.pixelSize: 13; color: "#00d4ff"; Layout.topMargin: 4; onLinkActivated: Qt.openUrlExternally(link) }
@@ -979,7 +979,7 @@ Rectangle {
                 Label {
                     anchors.centerIn: parent
                     text: "Gitcode 国内下载（推荐）"
-                    font.family: fontFamily; font.pixelSize: 14; color: "#4ade80"
+                    font.family: fontFamily; font.pixelSize: 15; color: "#4ade80"
                 }
                 MouseArea {
                     id: giteeMA
@@ -1000,7 +1000,7 @@ Rectangle {
                 Label {
                     anchors.centerIn: parent
                     text: "GitHub 国际下载"
-                    font.family: fontFamily; font.pixelSize: 14; color: "#00d4ff"
+                    font.family: fontFamily; font.pixelSize: 15; color: "#00d4ff"
                 }
                 MouseArea {
                     id: githubMA

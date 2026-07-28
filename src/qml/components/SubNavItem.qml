@@ -11,14 +11,14 @@ Rectangle {
     signal clicked()
 
     Layout.fillWidth: true
-    Layout.preferredHeight: 40
+    Layout.preferredHeight: 36
     radius: 6
     color: active ? "#2C2C2C" : (subNavMouse.containsMouse ? "#222222" : "transparent")
 
     Label {
         text: label
         font.family: fontFamily
-        font.pixelSize: 14
+        font.pixelSize: 15
         color: active ? "#cccccc" : "#888"
         anchors.verticalCenter: parent.verticalCenter
         anchors.left: parent.left

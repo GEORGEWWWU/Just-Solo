@@ -190,10 +190,10 @@ ColumnLayout {
         RowLayout {
             anchors.fill: parent; anchors.margins: 5; anchors.leftMargin: 8; spacing: 0
             Item { Layout.preferredWidth: root.colCover; Layout.maximumWidth: 40 }
-            Label { text: "标题"; font.family: fontFamily; font.pixelSize: 14; color: "#969696"; Layout.fillWidth: true; Layout.preferredWidth: root.colTitle; verticalAlignment: Text.AlignVCenter }
-            Label { text: "歌手"; font.family: fontFamily; font.pixelSize: 14; color: "#969696"; Layout.fillWidth: true; Layout.preferredWidth: root.colArtist; verticalAlignment: Text.AlignVCenter }
-            Label { text: "专辑"; font.family: fontFamily; font.pixelSize: 14; color: "#969696"; Layout.fillWidth: true; Layout.preferredWidth: root.colAlbum; verticalAlignment: Text.AlignVCenter }
-            Label { text: "时长"; font.family: fontFamily; font.pixelSize: 14; color: "#969696"; Layout.preferredWidth: root.colDuration; verticalAlignment: Text.AlignVCenter; horizontalAlignment: Text.AlignRight }
+            Label { text: "标题"; font.family: fontFamily; font.pixelSize: 15; color: "#969696"; Layout.fillWidth: true; Layout.preferredWidth: root.colTitle; verticalAlignment: Text.AlignVCenter }
+            Label { text: "歌手"; font.family: fontFamily; font.pixelSize: 15; color: "#969696"; Layout.fillWidth: true; Layout.preferredWidth: root.colArtist; verticalAlignment: Text.AlignVCenter }
+            Label { text: "专辑"; font.family: fontFamily; font.pixelSize: 15; color: "#969696"; Layout.fillWidth: true; Layout.preferredWidth: root.colAlbum; verticalAlignment: Text.AlignVCenter }
+            Label { text: "时长"; font.family: fontFamily; font.pixelSize: 15; color: "#969696"; Layout.preferredWidth: root.colDuration; verticalAlignment: Text.AlignVCenter; horizontalAlignment: Text.AlignRight }
             Item { Layout.preferredWidth: root.colPlay }
         }
     }
@@ -215,7 +215,7 @@ ColumnLayout {
             spacing: 8
             Label {
                 text: "⇅"
-                font.family: fontFamily; font.pixelSize: 14; color: "#00d4ff"
+                font.family: fontFamily; font.pixelSize: 15; color: "#00d4ff"
             }
             Label {
                 text: "排序模式 — 拖拽排序，拖到边缘自动滚动"
@@ -469,7 +469,7 @@ ColumnLayout {
                     Layout.preferredHeight: 40; Layout.alignment: Qt.AlignVCenter
                     Label {
                         text: root.draggedTrack ? (root.draggedTrack.name || "") : ""
-                        font.family: root.fontFamily; font.pixelSize: 14; font.bold: true
+                        font.family: root.fontFamily; font.pixelSize: 15; font.bold: true
                         color: "#d4d4d4"; elide: Text.ElideRight; width: parent.width
                         anchors.top: parent.top; anchors.left: parent.left
                     }
@@ -489,21 +489,21 @@ ColumnLayout {
 
                 Label {
                     text: root.draggedTrack ? (root.draggedTrack.artist || "未知") : ""
-                    font.family: root.fontFamily; font.pixelSize: 14; color: "#969696"
+                    font.family: root.fontFamily; font.pixelSize: 15; color: "#969696"
                     elide: Text.ElideRight; verticalAlignment: Text.AlignVCenter
                     Layout.fillWidth: true; Layout.fillHeight: true; Layout.preferredWidth: root.colArtist
                 }
 
                 Label {
                     text: root.draggedTrack ? (root.draggedTrack.album || "") : ""
-                    font.family: root.fontFamily; font.pixelSize: 14; color: "#888888"
+                    font.family: root.fontFamily; font.pixelSize: 15; color: "#888888"
                     elide: Text.ElideRight; verticalAlignment: Text.AlignVCenter
                     Layout.fillWidth: true; Layout.fillHeight: true; Layout.preferredWidth: root.colAlbum
                 }
 
                 Label {
                     text: root.draggedTrack ? (root.draggedTrack.durationText || "") : ""
-                    font.family: root.fontFamily; font.pixelSize: 14; color: "#969696"
+                    font.family: root.fontFamily; font.pixelSize: 15; color: "#969696"
                     verticalAlignment: Text.AlignVCenter; horizontalAlignment: Text.AlignRight
                     Layout.fillHeight: true; Layout.preferredWidth: root.colDuration
                 }
@@ -562,7 +562,7 @@ ColumnLayout {
             text: root.manualSortMode ? "退出排序" : "手动排序"
             contentItem: Label {
                 text: root.manualSortMode ? "退出排序" : "手动排序"
-                font.family: fontFamily; font.pixelSize: 14; color: "#00d4ff"
+                font.family: fontFamily; font.pixelSize: 15; color: "#00d4ff"
                 horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter
             }
             background: Rectangle { color: parent.hovered ? "#333333" : "transparent"; radius: 4 }
@@ -583,7 +583,7 @@ ColumnLayout {
             text: "手动排序"
             contentItem: Label {
                 text: "手动排序"
-                font.family: fontFamily; font.pixelSize: 14; color: "#666"
+                font.family: fontFamily; font.pixelSize: 15; color: "#666"
                 horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter
             }
             background: Rectangle { color: parent.hovered ? "#333333" : "transparent"; radius: 4 }
@@ -604,14 +604,14 @@ ColumnLayout {
             height: root.showDefaultContextMenu ? implicitHeight : 0
             text: root.rightClickedTrack ? (musicManager.isFavorite(root.rightClickedTrack) ? "取消收藏" : "收藏") : "收藏"
             onClicked: { if (root.rightClickedTrack) musicManager.toggleFavorite(root.rightClickedTrack) }
-            contentItem: Label { text: menuItem.text; font.family: fontFamily; font.pixelSize: 14; color: "#cccccc"; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
+            contentItem: Label { text: menuItem.text; font.family: fontFamily; font.pixelSize: 15; color: "#cccccc"; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
             background: Rectangle { color: menuItem.hovered ? "#333333" : "transparent"; radius: 4 }
         }
         MenuItem {
             visible: root.showDefaultContextMenu
             height: root.showDefaultContextMenu ? implicitHeight : 0
             text: "删除此歌曲"
-            contentItem: Label { text: "删除此歌曲"; font.family: fontFamily; font.pixelSize: 14; color: "#e06666"; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
+            contentItem: Label { text: "删除此歌曲"; font.family: fontFamily; font.pixelSize: 15; color: "#e06666"; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
             background: Rectangle { color: parent.hovered ? "#333333" : "transparent"; radius: 4 }
             onClicked: deleteConfirmDialog.open()
         }
@@ -625,7 +625,7 @@ ColumnLayout {
             MenuItem {
                 text: modelData.text || ""
                 onClicked: { if (modelData.onClicked) modelData.onClicked(); root.rightClickedTrack = null }
-                contentItem: Label { text: modelData.text || ""; font.family: fontFamily; font.pixelSize: 14; color: "#cccccc"; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
+                contentItem: Label { text: modelData.text || ""; font.family: fontFamily; font.pixelSize: 15; color: "#cccccc"; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
                 background: Rectangle { color: parent.hovered ? "#333333" : "transparent"; radius: 4 }
             }
             onObjectAdded: function(index, object) { contextMenu.insertItem(contextMenu.count, object) }
@@ -645,7 +645,7 @@ ColumnLayout {
         background: Rectangle { color: "#222222"; border.color: "#3A3A3A"; radius: 8 }
         contentItem: Label {
             text: root.manualSortDisabledMessage
-            font.family: fontFamily; font.pixelSize: 14; color: "#c0c0c0"
+            font.family: fontFamily; font.pixelSize: 15; color: "#c0c0c0"
             wrapMode: Text.Wrap; topPadding: 20; bottomPadding: 10
             leftPadding: 20; rightPadding: 20
         }
@@ -699,7 +699,7 @@ ColumnLayout {
                       ? "当前播放来源不是此页面，\n点击确定将切换播放来源并播放选定的歌曲。"
                       : "当前播放来源不是首页，\n点击确定将从头播放选定的歌曲。"
                 font.family: fontFamily
-                font.pixelSize: 14
+                font.pixelSize: 15
                 lineHeight: 1.4
                 color: "#cccccc"
                 wrapMode: Text.WordWrap

@@ -131,7 +131,7 @@ Item {
         anchors.topMargin: 14; anchors.rightMargin: 22
         width: 36; height: 36; radius: 18
         color: closeMA.containsMouse ? "#33ffffff" : "transparent"
-        Text { anchors.centerIn: parent; text: "\u25BC"; font.family: root.fontFamily; font.pixelSize: 14; color: closeMA.containsMouse ? "#ccc" : "#777" }
+        Text { anchors.centerIn: parent; text: "\u25BC"; font.family: root.fontFamily; font.pixelSize: 15; color: closeMA.containsMouse ? "#ccc" : "#777" }
         MouseArea { id: closeMA; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: root.close() }
     }
 

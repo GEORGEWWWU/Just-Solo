@@ -38,7 +38,7 @@ Window {
     }
 
     // ---- 布局常量 ----
-    readonly property int sidebarWidth: 230
+    readonly property int sidebarWidth: 200
     readonly property int playerBarHeight: 72
 
     // ---- 视图路由 ----
@@ -216,7 +216,7 @@ Window {
         Rectangle {
             Layout.preferredWidth: sidebarWidth
             Layout.fillHeight: true
-            color: "#181818"
+            color: "#1E1E1E"
 
             ColumnLayout {
                 anchors.top: parent.top
@@ -224,25 +224,27 @@ Window {
                 anchors.right: parent.right
                 anchors.bottom: createListBtn.top
                 anchors.topMargin: 10
-                anchors.leftMargin: 10
-                anchors.rightMargin: 10
+                anchors.leftMargin: 16
+                anchors.rightMargin: 16 // 现在这个右边距会真正生效了
                 spacing: 0
 
                 // ---- Logo + 标题 ----
                 Rectangle {
-                    Layout.preferredWidth: sidebarWidth
-                    Layout.preferredHeight: 60
+                    // 这里原来是 Layout.preferredWidth: sidebarWidth，导致宽度强制撑大溢出
+                    // 现在改为 Layout.fillWidth: true，听从外层的 16px 左右留白
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 64
                     color: "transparent"
 
                     RowLayout {
                         anchors.fill: parent
                         anchors.leftMargin: 4
-                        spacing: 12
+                        spacing: 10
 
                         Image {
                             source: "qrc:/qt/qml/JustSolo/data/image/logo2.png"
-                            sourceSize.width: 42
-                            sourceSize.height: 42
+                            sourceSize.width: 28
+                            sourceSize.height: 28
                             fillMode: Image.PreserveAspectFit
                         }
 
@@ -253,7 +255,7 @@ Window {
                             Label {
                                 text: "Just Solo"
                                 font.family: appFont.name
-                                font.pixelSize: 28
+                                font.pixelSize: 18
                                 font.bold: true
                                 color: "#cccccc"
                             }
@@ -261,7 +263,7 @@ Window {
                             Label {
                                 text: APP_VERSION
                                 font.family: appFont.name
-                                font.pixelSize: 11
+                                font.pixelSize: 10
                                 color: "#999"
                             }
                         }
@@ -272,18 +274,19 @@ Window {
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 1
-                    color: "#3A3A3A"
+                    Layout.topMargin: 12
+                    Layout.bottomMargin: 0
+                    color: "#3A3A3A2B"
                 }
 
-                Item { Layout.preferredHeight: 14 }
+                Item { Layout.preferredHeight: 14 } // 还原你原本的代码间距
 
                 // ---- 设置按钮 ----
                 Rectangle {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 42
+                    Layout.preferredHeight: 36
                     radius: 6
-                    color: currentMenu === "settings" ? "#2C2C2C"
-                         : (settingsTopMouse.containsMouse ? "#222222" : "transparent")
+                    color: currentMenu === "settings" ? "#2C2C2C" : (settingsTopMouse.containsMouse ? "#222222" : "transparent")
 
                     Row {
                         anchors.verticalCenter: parent.verticalCenter
@@ -292,12 +295,12 @@ Window {
                         spacing: 10
 
                         Rectangle {
-                            width: 34; height: 34; radius: 4; color: "transparent"
+                            width: 28; height: 28; radius: 4; color: "transparent"
                             Image {
                                 anchors.centerIn: parent
                                 source: "qrc:/qt/qml/JustSolo/data/image/setting.png"
-                                sourceSize.width: 28
-                                sourceSize.height: 28
+                                sourceSize.width: 24
+                                sourceSize.height: 24
                                 fillMode: Image.PreserveAspectFit
                             }
                         }
@@ -305,8 +308,8 @@ Window {
                         Label {
                             text: "设置"
                             font.family: appFont.name
-                            font.pixelSize: 17
-                            color: currentMenu === "settings" ? "#cccccc" : "#888"
+                            font.pixelSize: 15
+                            color: currentMenu === "settings" ? "#cccccc" : (settingsTopMouse.containsMouse ? "#cccccc" : "#888")
                             anchors.verticalCenter: parent.verticalCenter
                         }
                     }
@@ -325,20 +328,23 @@ Window {
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 1
-                    color: "#3A3A3A"
+                    Layout.topMargin: 12
+                    color: "#3A3A3A2B"
                 }
 
                 Item { Layout.preferredHeight: 14 }
 
                 // ---- 主导航（非设置页可见） ----
                 ColumnLayout {
-                    spacing: 2
+                    // 嵌套的 Layout 必须声明 Layout.fillWidth: true，否则子项边界会失控
+                    Layout.fillWidth: true
+                    spacing: 5
                     visible: currentMenu !== "settings"
 
                     NavItem {
                         iconSource: "qrc:/qt/qml/JustSolo/data/image/home.png"
                         label: "所有音乐"
-                        iconW: 34; iconH: 34; iconSrcSize: 26
+                        iconW: 28; iconH: 28; iconSrcSize: 20
                         active: currentMenu === "home"
                         fontFamily: appFont.name
                         onClicked: currentMenu = "home"
@@ -346,7 +352,7 @@ Window {
                     NavItem {
                         iconSource: "qrc:/qt/qml/JustSolo/data/image/PlayList.png"
                         label: "播放列表"
-                        iconW: 34; iconH: 34; iconSrcSize: 26
+                        iconW: 28; iconH: 28; iconSrcSize: 20
                         active: currentMenu === "playlist"
                         fontFamily: appFont.name
                         onClicked: currentMenu = "playlist"
@@ -354,7 +360,7 @@ Window {
                     NavItem {
                         iconSource: "qrc:/qt/qml/JustSolo/data/image/mylike.png"
                         label: "收藏"
-                        iconW: 34; iconH: 34; iconSrcSize: 32
+                        iconW: 28; iconH: 28; iconSrcSize: 20
                         active: currentMenu === "favorite"
                         fontFamily: appFont.name
                         onClicked: currentMenu = "favorite"
@@ -362,7 +368,7 @@ Window {
                     NavItem {
                         iconSource: "qrc:/qt/qml/JustSolo/data/image/history.png"
                         label: "历史"
-                        iconW: 34; iconH: 34; iconSrcSize: 26
+                        iconW: 28; iconH: 28; iconSrcSize: 20
                         active: currentMenu === "history"
                         fontFamily: appFont.name
                         onClicked: currentMenu = "history"
@@ -371,6 +377,8 @@ Window {
 
                 // ---- 设置子导航（设置页可见） ----
                 ColumnLayout {
+                    // 强制包裹容器受到 16px 留白的控制
+                    Layout.fillWidth: true
                     spacing: 2
                     visible: currentMenu === "settings"
 
@@ -410,9 +418,9 @@ Window {
                     // ---- 退出设置 ----
                     Rectangle {
                         Layout.fillWidth: true
-                        Layout.preferredHeight: 38
+                        Layout.preferredHeight: 36
                         radius: 6
-                        color: exitSettingsMouse.containsMouse ? "#3e2e3e" : "transparent"
+                        color: exitSettingsMouse.containsMouse ? "#2C2C2C" : "transparent"
 
                         Row {
                             anchors.centerIn: parent
@@ -420,8 +428,8 @@ Window {
                             Image {
                                 anchors.verticalCenter: parent.verticalCenter
                                 source: "qrc:/qt/qml/JustSolo/data/image/back.png"
-                                sourceSize.width: 14
-                                sourceSize.height: 14
+                                sourceSize.width: 15
+                                sourceSize.height: 15
                                 fillMode: Image.PreserveAspectFit
                             }
                             Label {
@@ -441,36 +449,45 @@ Window {
                     }
                 }
 
+                // ---- 分割线 ----
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 1
+                    Layout.topMargin: 12
+                    Layout.bottomMargin: 12
+                    color: "#3A3A3A2B"
+                }
+
                 // ---- 自定义播放列表 ----
                 ListView {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-                    visible: musicManager.customPlaylists.length > 0
+                    visible: currentMenu !== "settings" && musicManager.customPlaylists.length > 0
                     clip: true
-                    spacing: 2
+                    spacing: 5
                     model: musicManager.customPlaylists
 
                     delegate: Rectangle {
                         width: ListView.view.width
-                        height: 55
-                        radius: 6
+                        height: 36 
+                        radius: 6 // 4个圆角现在会完整展现，不会被遮挡
                         color: mainWindow.currentMenu === "customPlaylist" && mainWindow.currentCustomPlaylistIndex === index ? "#2C2C2C" : (plMA.containsMouse ? "#222222" : "transparent")
 
                         RowLayout {
                             anchors.verticalCenter: parent.verticalCenter
                             anchors.left: parent.left
                             anchors.right: parent.right
-                            anchors.leftMargin: 12
-                            anchors.rightMargin: 12
+                            anchors.leftMargin: 8
+                            anchors.rightMargin: 8
                             spacing: 10
 
                             Rectangle {
-                                Layout.preferredWidth: 34; Layout.preferredHeight: 34; radius: 4; color: "transparent"
+                                Layout.preferredWidth: 28; Layout.preferredHeight: 28; radius: 4; color: "transparent"
                                 Image {
                                     anchors.centerIn: parent
-                                    source: "qrc:/qt/qml/JustSolo/data/image/SelfList.png"
-                                    sourceSize.width: 30
-                                    sourceSize.height: 30
+                                    source: "qrc:/qt/qml/JustSolo/data/image/PlayList.png"
+                                    sourceSize.width: 20
+                                    sourceSize.height: 20
                                 }
                             }
 
@@ -479,7 +496,7 @@ Window {
                                 Layout.alignment: Qt.AlignVCenter
                                 text: modelData.name || "未命名"
                                 font.family: appFont.name
-                                font.pixelSize: 17
+                                font.pixelSize: 15
                                 color: mainWindow.currentMenu === "customPlaylist" && mainWindow.currentCustomPlaylistIndex === index ? "#cccccc" : (plMA.containsMouse ? "#cccccc" : "#888")
                                 elide: Text.ElideRight
                             }
@@ -509,10 +526,10 @@ Window {
 
                             MenuItem {
                                 text: "添加本地音乐"
-                                font.family: appFont.name; font.pixelSize: 14
+                                font.family: appFont.name; font.pixelSize: 15
                                 contentItem: Label {
                                     text: "添加本地音乐"
-                                    font.family: appFont.name; font.pixelSize: 14; color: "#cccccc"
+                                    font.family: appFont.name; font.pixelSize: 15; color: "#cccccc"
                                     verticalAlignment: Text.AlignVCenter; leftPadding: 12
                                 }
                                 background: Rectangle { color: parent.hovered ? "#333333" : "transparent"; radius: 4 }
@@ -521,10 +538,10 @@ Window {
 
                             MenuItem {
                                 text: "从音乐库导入"
-                                font.family: appFont.name; font.pixelSize: 14
+                                font.family: appFont.name; font.pixelSize: 15
                                 contentItem: Label {
                                     text: "从音乐库导入"
-                                    font.family: appFont.name; font.pixelSize: 14; color: "#cccccc"
+                                    font.family: appFont.name; font.pixelSize: 15; color: "#cccccc"
                                     verticalAlignment: Text.AlignVCenter; leftPadding: 12
                                 }
                                 background: Rectangle { color: parent.hovered ? "#333333" : "transparent"; radius: 4 }
@@ -542,10 +559,10 @@ Window {
 
                             MenuItem {
                                 text: "重命名"
-                                font.family: appFont.name; font.pixelSize: 14
+                                font.family: appFont.name; font.pixelSize: 15
                                 contentItem: Label {
                                     text: "重命名"
-                                    font.family: appFont.name; font.pixelSize: 14; color: "#cccccc"
+                                    font.family: appFont.name; font.pixelSize: 15; color: "#cccccc"
                                     verticalAlignment: Text.AlignVCenter; leftPadding: 12
                                 }
                                 background: Rectangle { color: parent.hovered ? "#333333" : "transparent"; radius: 4 }
@@ -557,10 +574,10 @@ Window {
 
                             MenuItem {
                                 text: "删除"
-                                font.family: appFont.name; font.pixelSize: 14
+                                font.family: appFont.name; font.pixelSize: 15
                                 contentItem: Label {
                                     text: "删除"
-                                    font.family: appFont.name; font.pixelSize: 14; color: "#cc5555"
+                                    font.family: appFont.name; font.pixelSize: 15; color: "#cc5555"
                                     verticalAlignment: Text.AlignVCenter; leftPadding: 12
                                 }
                                 background: Rectangle { color: parent.hovered ? "#333333" : "transparent"; radius: 4 }
@@ -590,10 +607,10 @@ Window {
                 anchors.bottom: parent.bottom
                 anchors.left: parent.left
                 anchors.right: parent.right
-                anchors.bottomMargin: 2
-                anchors.leftMargin: 10
-                anchors.rightMargin: 10
-                height: 50
+                anchors.bottomMargin: 8
+                anchors.leftMargin: 16
+                anchors.rightMargin: 16
+                height: 36
                 radius: 6
                 z: 10
                 color: sidebarCreateMA.containsMouse ? "#222222" : "transparent"
@@ -605,20 +622,20 @@ Window {
                     spacing: 10
 
                     Rectangle {
-                        width: 34; height: 34; radius: 4; color: "transparent"
+                        width: 28; height: 28; radius: 4; color: "transparent"
 
                         Image {
                             anchors.centerIn: parent
                             source: "qrc:/qt/qml/JustSolo/data/image/creatList.png"
-                            sourceSize.width: 26
-                            sourceSize.height: 26
+                            sourceSize.width: 22
+                            sourceSize.height: 22
                         }
                     }
 
                     Label {
                         text: "创建新列表"
                         font.family: appFont.name
-                        font.pixelSize: 17
+                        font.pixelSize: 15
                         color: sidebarCreateMA.containsMouse ? "#cccccc" : "#888"
                         anchors.verticalCenter: parent.verticalCenter
                     }
@@ -639,7 +656,7 @@ Window {
         Rectangle {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            color: "#1E1E1E"
+            color: "#181818"
 
             ColumnLayout {
                 anchors.fill: parent
@@ -751,7 +768,7 @@ Window {
                                                         id: nameText
                                                         text: mainWindow.highlightKw(modelData.name, searchInput.text)
                                                         textFormat: Text.StyledText
-                                                        font.family: appFont.name; font.pixelSize: 14; color: "#cccccc"
+                                                        font.family: appFont.name; font.pixelSize: 15; color: "#cccccc"
                                                         y: (parent.height - height) / 2
                                                         x: 0
 
@@ -1004,7 +1021,7 @@ Window {
                 // 欢迎页提示语（仅无菜单时显示）
                 Label {
                     text: "点击左侧列表开始使用"
-                    font.family: appFont.name; font.pixelSize: 14; color: "#888"
+                    font.family: appFont.name; font.pixelSize: 15; color: "#888"
                     visible: currentMenu === ""
                     Layout.alignment: Qt.AlignLeft
                     Layout.leftMargin: 40
@@ -1267,7 +1284,7 @@ Window {
                     Label {
                         text: musicManager.currentTitle ? musicManager.currentTitle : "未在播放"
                         font.family: appFont.name
-                        font.pixelSize: 14
+                        font.pixelSize: 15
                         font.bold: true
                         color: musicManager.currentTitle ? "#cccccc" : "#777"
                         elide: Text.ElideRight
@@ -1576,7 +1593,7 @@ Window {
                 placeholderText: "例如：我的歌单"
                 placeholderTextColor: "#aaa"
                 font.family: appFont.name
-                font.pixelSize: 14
+                font.pixelSize: 15
                 color: "#ddd"
                 verticalAlignment: TextInput.AlignVCenter
                 background: Rectangle {
@@ -1665,7 +1682,7 @@ Window {
                 placeholderText: "输入新名称"
                 placeholderTextColor: "#aaa"
                 font.family: appFont.name
-                font.pixelSize: 14
+                font.pixelSize: 15
                 color: "#ddd"
                 background: Rectangle {
                     radius: 6
@@ -1851,7 +1868,7 @@ Window {
                 Label {
                     anchors.centerIn: parent
                     text: libSearchField.text.trim() ? "未找到匹配的歌曲" : "音乐库为空"
-                    font.family: appFont.name; font.pixelSize: 14; color: "#888"
+                    font.family: appFont.name; font.pixelSize: 15; color: "#888"
                     visible: _libFilteredModel.length === 0
                 }
 

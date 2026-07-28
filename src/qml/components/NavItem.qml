@@ -7,16 +7,16 @@ Rectangle {
     property string iconSource: ""
     property string iconColor: ""
     property string label: ""
-    property int iconW: 34
-    property int iconH: 34
-    property int iconSrcSize: 26
+    property int iconW: 28
+    property int iconH: 28
+    property int iconSrcSize: 20
     property bool active: false
     property string fontFamily: ""
 
     signal clicked()
 
     Layout.fillWidth: true
-    Layout.preferredHeight: 50
+    Layout.preferredHeight: 36
     radius: 6
     color: active ? "#2C2C2C" : (navMouse.containsMouse ? "#222222" : "transparent")
 
@@ -49,8 +49,8 @@ Rectangle {
         Label {
             text: label
             font.family: fontFamily
-            font.pixelSize: 17
-            color: active ? "#cccccc" : "#888"
+            font.pixelSize: 15
+            color: active ? "#cccccc" : (navMouse.containsMouse ? "#cccccc" : "#888")
             anchors.verticalCenter: parent.verticalCenter
         }
     }
