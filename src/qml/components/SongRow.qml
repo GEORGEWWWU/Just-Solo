@@ -24,9 +24,9 @@ Rectangle {
     Behavior on placeholderOpacity { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
 
     radius: 8
-    color: isDragged ? "#4a4a7a"
-         : (sortMode ? "#2e2e50" : (isCurrent ? "#36365a"
-         : (rowMouse.containsMouse ? "#2a2a48" : "#222236")))
+    color: isDragged ? "#444444"
+         : (sortMode ? "#2C2C2C" : (isCurrent ? "#2C2C2C"
+         : (rowMouse.containsMouse ? "#222222" : "#181818")))
     Behavior on color { ColorAnimation { duration: 150 } }
 
     // ---- 放置占位灰卡（排序模式，目标行上方） ----
@@ -35,9 +35,9 @@ Rectangle {
         anchors { top: parent.top; left: parent.left; right: parent.right }
         height: placeholderH
         opacity: placeholderOpacity
-        color: "#3a3a55"
+        color: "#3A3A3A"
         radius: 8
-        border.color: "#555570"
+        border.color: "#555555"
         border.width: 1.5
         clip: true
 
@@ -140,7 +140,7 @@ Rectangle {
             Layout.preferredHeight: 40
             Layout.maximumWidth: 40
             Layout.alignment: Qt.AlignVCenter
-            radius: 6; color: "#3a3a55"
+            radius: 6; color: "#3A3A3A"
             Image {
                 anchors.fill: parent; anchors.margins: 2
                 sourceSize.width: 40; sourceSize.height: 40

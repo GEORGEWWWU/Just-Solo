@@ -62,7 +62,7 @@ Rectangle {
             Rectangle {
                 Layout.fillWidth: true; Layout.maximumWidth: 520
                 Layout.preferredHeight: 80; radius: 8
-                color: "#2e2e4a"; border.color: "#3a3a55"
+                color: "#222222"; border.color: "#3A3A3A"
                 ColumnLayout {
                     anchors.fill: parent; anchors.margins: 20; spacing: 6
                     RowLayout {
@@ -90,13 +90,13 @@ Rectangle {
                 // 检查更新按钮
                 Rectangle {
                     Layout.preferredWidth: 160; Layout.preferredHeight: 40
-                    radius: 8; color: "#3a3a5a"
+                    radius: 8; color: "#333333"
                     Label { anchors.centerIn: parent; text: "检查更新"; font.family: updateFont.name; font.pixelSize: 14; color: "#e8e8e8" }
                     MouseArea {
                         anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
                         onClicked: checkUpdate()
-                        onEntered: parent.color = "#4a4a6a"
-                        onExited: parent.color = "#3a3a5a"
+                        onEntered: parent.color = "#4A4A4A"
+                        onExited: parent.color = "#333333"
                     }
                 }
 
@@ -204,9 +204,9 @@ Rectangle {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 Layout.minimumHeight: 120
-                color: "#333350"
+                color: "#1E1E1E"
                 radius: 8
-                border.color: "#444466"
+                border.color: "#3A3A3A"
                 visible: changelogArea.text.length > 0
 
                 ScrollView {
@@ -257,7 +257,7 @@ Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 6
                     radius: 3
-                    color: "#3a3a55"
+                    color: "#3A3A3A"
 
                     Rectangle {
                         width: (updateChecker.downloadTotal > 0)
@@ -378,7 +378,7 @@ Rectangle {
         Rectangle {
             Layout.fillWidth: true; Layout.maximumWidth: 520
             Layout.preferredHeight: 110; radius: 8
-            color: "#2e2e4a"; border.color: "#3a3a55"
+            color: "#222222"; border.color: "#3A3A3A"
 
             ColumnLayout {
                 anchors.fill: parent; anchors.margins: 20; spacing: 10
@@ -408,7 +408,7 @@ Rectangle {
 
                     background: Rectangle {
                         x: 0; y: parent.height / 2 - 2
-                        width: parent.width; height: 4; radius: 2; color: "#3a3a55"
+                        width: parent.width; height: 4; radius: 2; color: "#3A3A3A"
                     }
                     contentItem: Rectangle {
                         width: parent.availableWidth * (parent.value - parent.from) / (parent.to - parent.from)
@@ -439,7 +439,7 @@ Rectangle {
         Rectangle {
             Layout.fillWidth: true; Layout.maximumWidth: 520
             Layout.preferredHeight: 110; radius: 8
-            color: "#2e2e4a"; border.color: "#3a3a55"
+            color: "#222222"; border.color: "#3A3A3A"
 
             ColumnLayout {
                 anchors.fill: parent; anchors.leftMargin: 20; anchors.rightMargin: 20; anchors.topMargin: 12; anchors.bottomMargin: 20; spacing: 10
@@ -492,7 +492,7 @@ Rectangle {
             Layout.fillWidth: true; Layout.maximumWidth: 520
             Layout.preferredHeight: 280
             radius: 8
-            color: "#2e2e4a"; border.color: "#3a3a55"
+            color: "#222222"; border.color: "#3A3A3A"
 
             ColumnLayout {
                 id: hotkeyCol
@@ -539,8 +539,8 @@ Rectangle {
                                     Layout.fillWidth: true
                                     Layout.preferredHeight: 30
                                     radius: 6
-                                    color: hotkeyRow.capturing ? "#3a3a5a" : (hkMA.containsMouse ? "#333350" : "#2a2a48")
-                                    border.color: hotkeyRow.capturing ? "#00d4ff" : "#3a3a55"
+                                    color: hotkeyRow.capturing ? "#333333" : (hkMA.containsMouse ? "#1E1E1E" : "#222222")
+                                    border.color: hotkeyRow.capturing ? "#00d4ff" : "#3A3A3A"
                                     border.width: hotkeyRow.capturing ? 2 : 1
 
                                     Label {
@@ -672,7 +672,7 @@ Rectangle {
         Rectangle {
             Layout.fillWidth: true; Layout.maximumWidth: 520
             Layout.preferredHeight: 90; radius: 8
-            color: "#2e2e4a"; border.color: "#3a3a55"
+            color: "#222222"; border.color: "#3A3A3A"
 
             ColumnLayout {
                 anchors.fill: parent; anchors.margins: 20; spacing: 10
@@ -698,7 +698,7 @@ Rectangle {
 
                     background: Rectangle {
                         x: 0; y: parent.height / 2 - 2
-                        width: parent.width; height: 4; radius: 2; color: "#3a3a55"
+                        width: parent.width; height: 4; radius: 2; color: "#3A3A3A"
                     }
                     contentItem: Rectangle {
                         width: parent.availableWidth * (parent.value - parent.from) / (parent.to - parent.from)
@@ -720,7 +720,7 @@ Rectangle {
         Rectangle {
             Layout.fillWidth: true; Layout.maximumWidth: 520
             Layout.preferredHeight: 90; radius: 8
-            color: "#2e2e4a"; border.color: "#3a3a55"
+            color: "#222222"; border.color: "#3A3A3A"
 
             ColumnLayout {
                 anchors.fill: parent; anchors.margins: 20; spacing: 10
@@ -752,7 +752,7 @@ Rectangle {
 
                     background: Rectangle {
                         x: 0; y: parent.height / 2 - 2
-                        width: parent.width; height: 4; radius: 2; color: "#3a3a55"
+                        width: parent.width; height: 4; radius: 2; color: "#3A3A3A"
                     }
                     contentItem: Rectangle {
                         width: parent.availableWidth * (parent.value - parent.from) / (parent.to - parent.from)
@@ -774,7 +774,7 @@ Rectangle {
         Rectangle {
             Layout.fillWidth: true; Layout.maximumWidth: 520
             Layout.preferredHeight: 70; radius: 8
-            color: "#2e2e4a"; border.color: "#3a3a55"
+            color: "#222222"; border.color: "#3A3A3A"
 
             RowLayout {
                 anchors.fill: parent; anchors.leftMargin: 20; anchors.rightMargin: 20; anchors.topMargin: 12; anchors.bottomMargin: 20
@@ -845,7 +845,7 @@ Rectangle {
         Rectangle {
             Layout.fillWidth: true; Layout.maximumWidth: 520
             Layout.preferredHeight: 120; radius: 10
-            color: "#2a2a52"; border.color: "#3a3a6a"
+            color: "#222222"; border.color: "#3A3A3A"
 
             ColumnLayout {
                 anchors.fill: parent; anchors.margins: 18; spacing: 8
@@ -881,7 +881,7 @@ Rectangle {
                     Layout.fillWidth: true; spacing: 12
                     Rectangle {
                         Layout.preferredWidth: 68; Layout.preferredHeight: 22; radius: 6
-                        color: "#3a3a6a"
+                        color: "#3A3A3A"
                         Label {
                             anchors.centerIn: parent
                             text: LYRICSERVER_VERSION || "v1.0.0"
@@ -897,7 +897,7 @@ Rectangle {
                 // 协议简述
                 Label {
                     text: "单向实时歌词推送：初始化(init) · 进度(progress) · 状态(playback)"
-                    font.family: fontFamily; font.pixelSize: 11; color: "#7777aa"
+                    font.family: fontFamily; font.pixelSize: 11; color: "#777777"
                     elide: Text.ElideRight; Layout.fillWidth: true
                 }
             }
@@ -950,8 +950,8 @@ Rectangle {
 
         background: Rectangle {
             radius: 10
-            color: "#2a2a3a"
-            border.color: "#3a3a5a"
+            color: "#222222"
+            border.color: "#333333"
         }
 
         header: Label {
@@ -995,8 +995,8 @@ Rectangle {
 
             Rectangle {
                 Layout.fillWidth: true; Layout.preferredHeight: 44; radius: 8
-                color: githubMA.containsMouse ? "#3a3a5a" : "#2a2a4a"
-                border.color: "#3a3a6a"
+                color: githubMA.containsMouse ? "#333333" : "#222222"
+                border.color: "#3A3A3A"
                 Label {
                     anchors.centerIn: parent
                     text: "GitHub 国际下载"
@@ -1016,7 +1016,7 @@ Rectangle {
 
             Rectangle {
                 Layout.fillWidth: true; Layout.preferredHeight: 36; radius: 8
-                color: cancelMA.containsMouse ? "#3a3a4a" : "#2a2a3a"
+                color: cancelMA.containsMouse ? "#3a3a4a" : "#222222"
                 border.color: "#3a3a4a"
                 Label {
                     anchors.centerIn: parent

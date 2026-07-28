@@ -18,7 +18,7 @@ Rectangle {
     Layout.fillWidth: true
     Layout.preferredHeight: 50
     radius: 6
-    color: active ? "#36365a" : (navMouse.containsMouse ? "#2a2a48" : "transparent")
+    color: active ? "#2C2C2C" : (navMouse.containsMouse ? "#222222" : "transparent")
 
     Row {
         anchors.verticalCenter: parent.verticalCenter

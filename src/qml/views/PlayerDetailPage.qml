@@ -165,8 +165,8 @@ Item {
                 anchors.horizontalCenter: parent.horizontalCenter
                 y: Math.max(0, parent.height * 0.04)
                 width: Math.min(parent.width * 0.85, parent.height * 0.42)
-                height: width; radius: 12; color: "#1e1e35"
-                border.color: "#2a2a48"; border.width: 1
+                height: width; radius: 12; color: "#222222"
+                border.color: "#222222"; border.width: 1
 
                 Image {
                     anchors.fill: parent; anchors.margins: 3
@@ -177,7 +177,7 @@ Item {
                 }
                 Text {
                     anchors.centerIn: parent; font.family: root.fontFamily
-                    text: "\u266B"; font.pixelSize: 42; color: "#3a3a5a"
+                    text: "\u266B"; font.pixelSize: 42; color: "#333333"
                     visible: (typeof musicManager === "undefined" || !musicManager || musicManager.currentCover === "")
                 }
             }
@@ -368,7 +368,7 @@ Item {
             }
             // 播放/暂停
             Rectangle {
-                width: 40; height: 40; radius: 20; color: "#444466"
+                width: 40; height: 40; radius: 20; color: "#3A3A3A"
                 anchors.verticalCenter: parent.verticalCenter
                 Image { source: "qrc:/qt/qml/JustSolo/data/image/play.png"; width: 22; height: 22; anchors.centerIn: parent; opacity: musicManager.isPlaying ? 0 : 1; Behavior on opacity { NumberAnimation { duration: 120 } } }
                 Image { source: "qrc:/qt/qml/JustSolo/data/image/playing.png"; width: 22; height: 22; anchors.centerIn: parent; opacity: musicManager.isPlaying ? 1 : 0; Behavior on opacity { NumberAnimation { duration: 120 } } }
@@ -418,9 +418,9 @@ Item {
                     padding: 8
 
                     background: Rectangle {
-                        radius: 8; color: "#2a2a48"
+                        radius: 8; color: "#222222"
                         opacity: (typeof musicManager !== "undefined" && musicManager) ? (musicManager.menuOpacity || 0.80) : 0.80
-                        border.color: "#444466"; border.width: 1
+                        border.color: "#3A3A3A"; border.width: 1
                     }
 
                     RowLayout {
@@ -445,7 +445,7 @@ Item {
                             onMoved: musicManager.volume = value
 
                             background: Rectangle {
-                                implicitHeight: 4; radius: 2; color: "#3a3a55"
+                                implicitHeight: 4; radius: 2; color: "#3A3A3A"
                                 Rectangle {
                                     width: volumeSliderDetail.visualPosition * parent.width
                                     height: parent.height; radius: 2; color: "#00d4ff"
@@ -512,9 +512,9 @@ Item {
                     y: -height - 8
                     padding: 4
                     background: Rectangle {
-                        radius: 8; color: "#2a2a48"
+                        radius: 8; color: "#222222"
                         opacity: (typeof musicManager !== "undefined" && musicManager) ? (musicManager.menuOpacity || 0.80) : 0.80
-                        border.color: "#444466"; border.width: 1
+                        border.color: "#3A3A3A"; border.width: 1
                     }
                     closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
 
@@ -559,7 +559,7 @@ Item {
                 anchors.left: parent.left; anchors.leftMargin: 72
                 anchors.right: parent.right; anchors.rightMargin: 40
                 anchors.verticalCenter: parent.verticalCenter
-                height: 4; radius: 2; color: "#3a3a55"
+                height: 4; radius: 2; color: "#3A3A3A"
 
                 Rectangle {
                     id: progressFill
