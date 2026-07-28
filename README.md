@@ -24,7 +24,8 @@
 
 > **作者**：ZZJ-JACK ([zzjjack.us.kg](https://zzjjack.us.kg))  
 > **官方网站**：[https://justsolo.zzjjack.us.kg](https://justsolo.zzjjack.us.kg)  
-> **仓库**：[GitCode](https://gitcode.com/ZZJ-JACK/Just-Solo) | [GitHub](https://github.com/ZZJ-jack/Just-Solo) | [Gitee](https://gitee.com/zzj-jack/just-solo)
+> **仓库**： [GitHub](https://github.com/ZZJ-jack/Just-Solo) | [GitCode](https://gitcode.com/ZZJ-JACK/Just-Solo)
+> （本项目只在Github和GitCode上发布，其他渠道均非官方仓库，请不要轻信其他渠道的代码）
 
 Just Solo 是一款追求简洁、高性能的本地音乐播放器。采用 C++ 高性能核心 + QML 现代界面，无 Electron 依赖，内存占用低，冷启动迅速。
 
