@@ -56,7 +56,6 @@ signals:
 
 private:
     static bool compareVersions(const QString &current, const QString &latest);
-    QString extractExeUrl(const QJsonArray &assets) const;
 
     QString m_currentVersion;
     QString m_latestVersion;

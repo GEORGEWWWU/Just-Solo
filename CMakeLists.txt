@@ -2,8 +2,8 @@ cmake_minimum_required(VERSION 3.16)
 project(JustSolo VERSION 0.1.0 LANGUAGES CXX)
 
 # ---- 软件版本号 ----
-set(APP_VERSION_MAJOR 0)
-set(APP_VERSION_MINOR 8)
+set(APP_VERSION_MAJOR 1)
+set(APP_VERSION_MINOR 0)
 set(APP_VERSION_PATCH 0)
 set(APP_VERSION_PRE   0)   # 0=正式版, >0=beta.N
 
@@ -24,11 +24,11 @@ set(LYRICSERVER_PROTOCOL_VERSION "v${LYRICSERVER_PROTOCOL_VERSION_MAJOR}.${LYRIC
 message(STATUS "LyricServer protocol: ${LYRICSERVER_PROTOCOL_VERSION}")
 
 # 指定 Qt 安装目录
-# set(Qt6_DIR "C:/Qt/6.8.3/msvc2022_64/lib/cmake/Qt6")
-# set(CMAKE_PREFIX_PATH "C:/Qt/6.8.3/msvc2022_64")
+set(Qt6_DIR "C:/Qt/6.8.3/msvc2022_64/lib/cmake/Qt6")
+set(CMAKE_PREFIX_PATH "C:/Qt/6.8.3/msvc2022_64")
 
-set(Qt6_DIR "F:/QT/6.11.1/msvc2022_64/lib/cmake/Qt6")
-set(CMAKE_PREFIX_PATH "F:/QT/6.11.1/msvc2022_64")
+# set(Qt6_DIR "F:/QT/6.11.1/msvc2022_64/lib/cmake/Qt6")
+# set(CMAKE_PREFIX_PATH "F:/QT/6.11.1/msvc2022_64")
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

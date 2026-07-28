@@ -1,7 +1,7 @@
 #include "UpdateChecker.h"
 
 #include <QJsonDocument>
-#include <QJsonArray>
+
 #include <QJsonObject>
 #include <QUrl>
 #include <QDir>
@@ -110,13 +110,10 @@ void UpdateChecker::checkForUpdates()
         }
 
         QJsonObject root = doc.object();
-        m_latestVersion = root.value("tag_name").toString();
-        m_changelog = root.value("body").toString().trimmed();
-        m_releaseDate = root.value("created_at").toString();
-
-        // 提取安装程序下载地址
-        QJsonArray assets = root.value("assets").toArray();
-        m_downloadUrl = extractExeUrl(assets);
+        m_latestVersion = root.value("version").toString();
+        m_changelog = root.value("changelog").toString().trimmed();
+        m_releaseDate = root.value("updated_at").toString();
+        m_downloadUrl = root.value("github_exe").toString();
 
         // 版本比较
         m_isNewer = compareVersions(m_currentVersion, m_latestVersion);
@@ -296,23 +293,3 @@ bool UpdateChecker::compareVersions(const QString &current, const QString &lates
     return false; // 版本相同
 }
 
-QString UpdateChecker::extractExeUrl(const QJsonArray &assets) const
-{
-    // 优先找 type 为 "attach" 且以 .exe 结尾的资源
-    QString fallback;
-    for (const QJsonValue &val : assets) {
-        QJsonObject obj = val.toObject();
-        QString name = obj.value("name").toString();
-        QString type = obj.value("type").toString();
-        QString url  = obj.value("browser_download_url").toString();
-
-        if (type == "attach" && name.endsWith(".exe", Qt::CaseInsensitive)) {
-            return url;
-        }
-        // 备用：任何 .exe 文件
-        if (name.endsWith(".exe", Qt::CaseInsensitive) && !url.isEmpty()) {
-            fallback = url;
-        }
-    }
-    return fallback;
-}
