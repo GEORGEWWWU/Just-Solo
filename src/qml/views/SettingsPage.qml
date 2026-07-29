@@ -29,6 +29,31 @@ Rectangle {
         updateChecker.checkForUpdates()
     }
 
+    // 预处理更新日志 Markdown，修复引用块、行尾等兼容性问题
+    function formatChangelog(text) {
+        if (!text) return ""
+        // 1. 统一行尾为 \n
+        text = text.replace(/\r\n/g, "\n")
+        // 2. 确保引用块(>)的续行也带上 > 前缀（Qt MarkdownText 对懒续行支持不稳定）
+        var lines = text.split("\n")
+        var result = []
+        var inQuote = false
+        for (var i = 0; i < lines.length; i++) {
+            var line = lines[i]
+            if (/^\s*>/.test(line)) {
+                inQuote = true
+                result.push(line)
+            } else if (inQuote && line.trim().length > 0) {
+                // 引用块内的续行：自动补 > 前缀
+                result.push("> " + line)
+            } else {
+                inQuote = false
+                result.push(line)
+            }
+        }
+        return result.join("\n")
+    }
+
     // ---- 快捷键捕获（顶层统一处理，绕过 Repeater 焦点域） ----
     property int capturingHkId: -1  // -1 = 不在捕获状态
     focus: false
@@ -224,6 +249,7 @@ Rectangle {
                         font.family: updateFont.name
                         font.pixelSize: 13
                         color: "#ffffff"
+                        linkColor: "#3B82F6"
                         wrapMode: Text.WordWrap
                         textFormat: Text.MarkdownText
                     }
@@ -324,7 +350,7 @@ Rectangle {
                 var d = new Date(rawDate)
                 dateLabel.text = d.toLocaleDateString(Qt.locale("zh_CN"), "yyyy-MM-dd")
             }
-            changelogArea.text = updateChecker.changelog
+            changelogArea.text = formatChangelog(updateChecker.changelog)
         }
     }
 
@@ -342,7 +368,7 @@ Rectangle {
                 var d = new Date(rawDate)
                 dateLabel.text = d.toLocaleDateString(Qt.locale("zh_CN"), "yyyy-MM-dd")
             }
-            changelogArea.text = updateChecker.changelog
+            changelogArea.text = formatChangelog(updateChecker.changelog)
         }
 
         function onDownloadProgressChanged() {
