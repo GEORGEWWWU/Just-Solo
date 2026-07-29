@@ -53,6 +53,8 @@ ColumnLayout {
     property real _dragEdgeY: 0           // 进入边缘区时的鼠标 Y（相对 musicListView）
     property real _dropIndicatorY: 0      // 浮动放置指示线 Y
     property int _autoScrollFinalIndex: -1 // 自动滚动期间计算的最终目标索引
+    property bool _suppressAutoScroll: false // reorder 期间抑制自动定位
+    property real _savedContentY: 0          // reorder 前保存的滚动位置
 
     function reorderSong(fromIdx, toIdx) {
         if (fromIdx === toIdx) return
@@ -134,7 +136,14 @@ ColumnLayout {
 
     // 同一 HomePage 实例切换 songList（所有音乐↔自定义列表）时触发定位
     onSongListChanged: {
-        if (autoScrollEnabled && visible && musicManager.currentIndex >= 0) {
+        if (_suppressAutoScroll) {
+            // reorder 引起的模型变化：恢复滚动位置，再解禁自动定位
+            Qt.callLater(function() {
+                musicListView.contentY = Math.min(root._savedContentY,
+                    Math.max(0, musicListView.contentHeight - musicListView.height))
+                root._suppressAutoScroll = false
+            })
+        } else if (autoScrollEnabled && visible && musicManager.currentIndex >= 0) {
             Qt.callLater(function() { scrollToPlaying() })
         }
     }
@@ -205,8 +214,11 @@ ColumnLayout {
             colIndex: root.colIndex
             colFav: root.colFav
             colMenu: root.colMenu
-            isDragged: root.draggedIndex === index
-            showDropAbove: root.dropTargetIndex === index && root.draggedIndex !== index
+            isDragged: root.draggedTrack && model && model.path && model.path === root.draggedTrack.path
+            showDropAbove: {
+                var targetIdx = root._autoScrollFinalIndex >= 0 ? root._autoScrollFinalIndex : root.dropTargetIndex
+                return targetIdx === index && root.draggedIndex !== index
+            }
             contextMenuOpen: root.contextMenuOpen
 
             Behavior on opacity {
@@ -215,7 +227,16 @@ ColumnLayout {
 
             onDragStarted: function(globalX, globalY, localY) {
                 root.draggedIndex = index
-                root.draggedTrack = model
+                // 深拷贝：model 是 QML 引擎的包装对象，delegate 回收后属性值会变
+                root.draggedTrack = {
+                    name: model.name,
+                    path: model.path,
+                    artist: model.artist,
+                    cover: model.cover,
+                    album: model.album,
+                    durationText: model.durationText,
+                    quality: model.quality
+                }
                 root.dragOffsetY = localY
                 var lvPt = musicListView.mapFromGlobal(globalX, globalY)
                 root.dragOverlayY = lvPt.y - root.dragOffsetY
@@ -251,6 +272,7 @@ ColumnLayout {
                     if (!autoScrollTimer.running) autoScrollTimer.start()
                 } else {
                     if (autoScrollTimer.running) autoScrollTimer.stop()
+                    root._autoScrollFinalIndex = -1
                 }
             }
             onDragEnded: {
@@ -265,11 +287,16 @@ ColumnLayout {
                 root._autoScrollFinalIndex = -1
 
                 if (finalFrom >= 0 && finalTo >= 0 && finalFrom !== finalTo) {
+                    // 保存 contentY：C++ moveSong 返回 QVariantList 副本，
+                    // 模型替换会导致 ListView contentY 重置为 0
+                    var savedY = musicListView.contentY
+                    root._savedContentY = savedY
+                    root._suppressAutoScroll = true
                     root.reorderSong(finalFrom, finalTo)
                 }
             }
 
-            opacity: (root.draggedIndex >= 0 && root.draggedIndex === index) ? 0.4 : 1.0
+            opacity: (root.draggedTrack && model && model.path && model.path === root.draggedTrack.path) ? 0.4 : 1.0
 
             onLeftClicked: {
                 if (root.onLeftClick) {
