@@ -70,8 +70,10 @@ Rectangle {
     required property bool   contextMenuOpen
 
     // 拖拽信号：通知 MusicListView 开始/移动/结束拖拽
-    signal dragStarted(real mouseY)
-    signal dragMoved(real mouseY)
+    // 传递全局坐标避免委托位移/回收导致的坐标系偏移
+    // localY 是鼠标在 SongRow 内的纵向偏移（用于计算 dragOffsetY）
+    signal dragStarted(real globalX, real globalY, real localY)
+    signal dragMoved(real globalX, real globalY)
     signal dragEnded()
 
     signal leftClicked()
@@ -95,8 +97,8 @@ Rectangle {
                 rowMouse._dragTriggered = true
                 rowMouse._isDragging = true
                 rowMouse.preventStealing = true
-                var pt = mapToItem(songRow, rowMouse.mouseX, rowMouse.mouseY)
-                songRow.dragStarted(pt.y)
+                var globalPt = rowMouse.mapToGlobal(rowMouse.mouseX, rowMouse.mouseY)
+                songRow.dragStarted(globalPt.x, globalPt.y, rowMouse.mouseY)
             }
         }
 
@@ -113,8 +115,8 @@ Rectangle {
 
         onPositionChanged: function(mouse) {
             if (_isDragging) {
-                var pt = mapToItem(songRow, mouse.x, mouse.y)
-                songRow.dragMoved(pt.y)
+                var globalPt = rowMouse.mapToGlobal(mouse.x, mouse.y)
+                songRow.dragMoved(globalPt.x, globalPt.y)
             } else if (!_dragTriggered && Math.abs(mouse.y - _pressY) > 10) {
                 longPressTimer.stop()
             }

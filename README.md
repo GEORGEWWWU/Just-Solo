@@ -18,6 +18,8 @@
 
 > PS：本示范图片仅用于展示功能，歌曲版权属于原作者
 
+<img src="./data/image/photo-2.png" alt="Photo 2"/>
+
 ---
 
 ## 项目简介

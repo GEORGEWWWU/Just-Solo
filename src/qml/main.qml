@@ -1361,9 +1361,18 @@ Window {
                         musicManager.seek(_dragRatio * musicManager.duration)
                 }
 
-                onPressed: function(m) { _trackW = barProgressTrack.width; seek(m.x) }
+                onPressed: function(m) {
+                    _trackW = barProgressTrack.width
+                    seek(m.x)
+                    if (!musicManager.isPlaying && musicManager.duration > 0)
+                        musicManager.play()
+                }
                 onPositionChanged: function(m) { if (pressed) seek(m.x) }
-                onClicked: function(m) { seek(m.x) }
+                onClicked: function(m) {
+                    seek(m.x)
+                    if (!musicManager.isPlaying && musicManager.duration > 0)
+                        musicManager.play()
+                }
             }
         }
 

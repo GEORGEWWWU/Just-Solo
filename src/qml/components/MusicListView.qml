@@ -213,23 +213,22 @@ ColumnLayout {
                 NumberAnimation { duration: 0 }
             }
 
-            onDragStarted: function(mouseY) {
+            onDragStarted: function(globalX, globalY, localY) {
                 root.draggedIndex = index
                 root.draggedTrack = model
-                root.dragOffsetY = mouseY
-                // 计算浮层在 musicListView 内的起始 Y
-                var rowGlobal = mapToItem(musicListView, 0, 0)
-                root.dragOverlayY = rowGlobal.y
+                root.dragOffsetY = localY
+                var lvPt = musicListView.mapFromGlobal(globalX, globalY)
+                root.dragOverlayY = lvPt.y - root.dragOffsetY
                 dragOverlay.visible = true
             }
-            onDragMoved: function(mouseY) {
-                var posInListView = mapToItem(musicListView, 0, mouseY)
-                root.dragOverlayY = Math.max(0, Math.min(posInListView.y - root.dragOffsetY,
+            onDragMoved: function(globalX, globalY) {
+                var lvPt = musicListView.mapFromGlobal(globalX, globalY)
+                root.dragOverlayY = Math.max(0, Math.min(lvPt.y - root.dragOffsetY,
                     musicListView.height - 50))
 
                 // 计算目标索引（viewport Y + contentY → content Y）
                 var rowHeight = 50 + musicListView.spacing
-                var targetY = posInListView.y + musicListView.contentY
+                var targetY = lvPt.y + musicListView.contentY
                 var targetIdx = Math.floor((targetY + rowHeight / 2) / rowHeight)
                 targetIdx = Math.max(0, Math.min(targetIdx, musicListView.count - 1))
                 if (targetIdx !== root.dropTargetIndex) {
@@ -241,14 +240,14 @@ ColumnLayout {
                 // ---- 拖拽自动滚动（边缘检测） ----
                 var edgeThreshold = 50
                 var lvHeight = musicListView.height
-                if (posInListView.y < edgeThreshold && musicListView.contentY > 0) {
+                if (lvPt.y < edgeThreshold && musicListView.contentY > 0) {
                     root._autoScrollDirection = -1
-                    root._dragEdgeY = Math.max(0, posInListView.y)
+                    root._dragEdgeY = Math.max(0, lvPt.y)
                     if (!autoScrollTimer.running) autoScrollTimer.start()
-                } else if (posInListView.y > lvHeight - edgeThreshold
+                } else if (lvPt.y > lvHeight - edgeThreshold
                            && musicListView.contentY < musicListView.contentHeight - lvHeight) {
                     root._autoScrollDirection = 1
-                    root._dragEdgeY = Math.min(lvHeight, posInListView.y)
+                    root._dragEdgeY = Math.min(lvHeight, lvPt.y)
                     if (!autoScrollTimer.running) autoScrollTimer.start()
                 } else {
                     if (autoScrollTimer.running) autoScrollTimer.stop()
