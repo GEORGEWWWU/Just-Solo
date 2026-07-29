@@ -407,6 +407,10 @@ void MusicManager::loadSettings() {
         m_menuOpacity = obj.value("menuOpacity").toDouble(m_menuOpacity);
         emit menuOpacityChanged();
     }
+    if (obj.contains("volumeMenuOpacity")) {
+        m_volumeMenuOpacity = obj.value("volumeMenuOpacity").toDouble(m_volumeMenuOpacity);
+        emit volumeMenuOpacityChanged();
+    }
     if (obj.contains("trackCrossSource")) {
         m_trackCrossSource = obj.value("trackCrossSource").toBool(false);
         emit trackCrossSourceChanged();
@@ -430,6 +434,7 @@ void MusicManager::saveSettings() {
     obj["lyricOffset"] = m_lyricOffset;
     obj["playMode"] = m_playMode;
     obj["menuOpacity"] = m_menuOpacity;
+    obj["volumeMenuOpacity"] = m_volumeMenuOpacity;
     obj["trackCrossSource"] = m_trackCrossSource;
     obj["minimizeToTray"] = m_minimizeToTray;
     obj["volume"] = m_volume;
@@ -462,6 +467,14 @@ void MusicManager::setMenuOpacity(qreal v) {
     if (qFuzzyCompare(v, m_menuOpacity)) return;
     m_menuOpacity = v;
     emit menuOpacityChanged();
+    saveSettings();
+}
+
+void MusicManager::setVolumeMenuOpacity(qreal v) {
+    v = qBound(0.3, v, 1.0);
+    if (qFuzzyCompare(v, m_volumeMenuOpacity)) return;
+    m_volumeMenuOpacity = v;
+    emit volumeMenuOpacityChanged();
     saveSettings();
 }
 

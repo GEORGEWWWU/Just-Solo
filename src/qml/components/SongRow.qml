@@ -226,8 +226,10 @@ Rectangle {
                     width: qualityText.contentWidth + 8
                     height: 18
                     radius: 3
-                    color: "#80777777"
+                    color: "#777777"
                     visible: model.quality && model.quality !== ""
+                    opacity: 0.8
+                    Behavior on opacity { NumberAnimation { duration: 120 } }
                     Label {
                         id: qualityText
                         text: model.quality || ""

@@ -18,7 +18,7 @@ Rectangle {
     Label {
         text: label
         font.family: fontFamily
-        font.pixelSize: 15
+        font.pixelSize: 13
         color: active ? "#cccccc" : (subNavMouse.containsMouse ? "#cccccc" : "#888")
         anchors.verticalCenter: parent.verticalCenter
         anchors.left: parent.left

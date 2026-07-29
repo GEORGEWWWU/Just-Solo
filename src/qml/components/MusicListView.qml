@@ -415,8 +415,10 @@ ColumnLayout {
                             id: qualityOverlayRect
                             width: qualityOverlayText.contentWidth + 8
                             height: 18
-                            radius: 3; color: "#80777777"
+                            radius: 3; color: "#777777"
                             visible: root.draggedTrack && root.draggedTrack.quality && root.draggedTrack.quality !== ""
+                            opacity: 0.8
+                            Behavior on opacity { NumberAnimation { duration: 120 } }
                             Label {
                                 id: qualityOverlayText
                                 text: root.draggedTrack ? (root.draggedTrack.quality || "") : ""

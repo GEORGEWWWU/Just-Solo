@@ -1516,6 +1516,8 @@ Window {
                         color: "#222222"
                         border.color: "#3A3A3A"
                         border.width: 1
+                        opacity: musicManager.menuOpacity || 0.8
+                        Behavior on opacity { NumberAnimation { duration: 120 } }
                     }
 
                     contentItem: Row {
@@ -1606,6 +1608,8 @@ Window {
                         color: "#222222"
                         border.color: "#3A3A3A"
                         border.width: 1
+                        opacity: musicManager.volumeMenuOpacity || 0.8
+                        Behavior on opacity { NumberAnimation { duration: 120 } }
                     }
 
                     contentItem: Item {

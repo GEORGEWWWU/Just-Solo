@@ -36,6 +36,7 @@ class MusicManager : public QObject
     Q_PROPERTY(int lyricOffset READ lyricOffset WRITE setLyricOffset NOTIFY lyricOffsetChanged)
     Q_PROPERTY(int playMode READ playMode WRITE setPlayMode NOTIFY playModeChanged)
     Q_PROPERTY(qreal menuOpacity READ menuOpacity WRITE setMenuOpacity NOTIFY menuOpacityChanged)
+    Q_PROPERTY(qreal volumeMenuOpacity READ volumeMenuOpacity WRITE setVolumeMenuOpacity NOTIFY volumeMenuOpacityChanged)
     Q_PROPERTY(int playlistSource READ playlistSource WRITE setPlaylistSource NOTIFY playlistSourceChanged)
     Q_PROPERTY(bool trackCrossSource READ trackCrossSource WRITE setTrackCrossSource NOTIFY trackCrossSourceChanged)
     Q_PROPERTY(bool minimizeToTray READ minimizeToTray WRITE setMinimizeToTray NOTIFY minimizeToTrayChanged)
@@ -113,6 +114,8 @@ public:
     void setLyricOffset(int v);
     qreal menuOpacity() const { return m_menuOpacity; }
     void setMenuOpacity(qreal v);
+    qreal volumeMenuOpacity() const { return m_volumeMenuOpacity; }
+    void setVolumeMenuOpacity(qreal v);
 
     // ---- 播放列表来源 ----
     int playlistSource() const { return m_playlistSource; }
@@ -193,6 +196,7 @@ signals:
     void lyricOffsetChanged();
     void playModeChanged();
     void menuOpacityChanged();
+    void volumeMenuOpacityChanged();
     void playlistSourceChanged();
     void trackCrossSourceChanged();
     void minimizeToTrayChanged();
@@ -243,6 +247,7 @@ private:
     int m_lyricOffset = 130;       // 用户可调基础偏移 (ms)，最终 = base + 2.15×歌词长度
     int m_playMode = 0;             // 播放模式 (Sequential=0)
     qreal m_menuOpacity = 0.80;     // 模式菜单透明度 (0.3-1.0)
+    qreal m_volumeMenuOpacity = 0.80; // 音量控制条透明度 (0.3-1.0)
     int m_playlistSource = 0;       // 活跃播放列表来源 (SourcePlaylist=0)
     bool m_trackCrossSource = false; // 跨来源播放跟踪（默认关闭）
     bool m_minimizeToTray = false;
