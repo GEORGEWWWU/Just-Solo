@@ -1457,7 +1457,93 @@ Window {
         RowLayout {
             Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
             Layout.rightMargin: 16
-            spacing: 12
+            spacing: 24
+
+            // ---- 循环模式按钮 ----
+            Item {
+                id: modeBtnBar
+                Layout.preferredWidth: 22
+                Layout.preferredHeight: 22
+
+                property var modeIcons: ["mode_sequential.png", "mode_loop.png", "mode_single.png", "mode_shuffle.png", "mode_stop.png"]
+
+                Image {
+                    anchors.centerIn: parent
+                    source: "qrc:/qt/qml/JustSolo/data/image/" + modeBtnBar.modeIcons[musicManager.playMode]
+                    width: 20; height: 20
+                    opacity: (modeMABar.containsMouse || modePopupBar.visible) ? 1.0 : 0.7
+                    Behavior on opacity { NumberAnimation { duration: 120 } }
+                }
+
+                Timer {
+                    id: hideModeTimerBar
+                    interval: 250
+                    repeat: false
+                    onTriggered: modePopupBar.close()
+                }
+
+                function showModePopup() {
+                    hideModeTimerBar.stop()
+                    modePopupBar.open()
+                }
+
+                function scheduleModeHide() {
+                    hideModeTimerBar.restart()
+                }
+
+                MouseArea {
+                    id: modeMABar
+                    anchors.fill: parent
+                    anchors.margins: -8
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onEntered: modeBtnBar.showModePopup()
+                    onExited: modeBtnBar.scheduleModeHide()
+                }
+
+                Popup {
+                    id: modePopupBar
+                    x: parent.width / 2 - width / 2
+                    y: -height - 12
+                    padding: 6
+
+                    background: Rectangle {
+                        radius: 8
+                        color: "#222222"
+                        border.color: "#3A3A3A"
+                        border.width: 1
+                    }
+
+                    contentItem: Row {
+                        spacing: 6
+                        Repeater {
+                            model: 5
+                            Image {
+                                source: "qrc:/qt/qml/JustSolo/data/image/" + modeBtnBar.modeIcons[index]
+                                sourceSize.width: index === 4 ? 21 : 22; sourceSize.height: index === 4 ? 21 : 22
+                                width: index === 4 ? 21 : 22; height: index === 4 ? 21 : 22
+                                fillMode: Image.PreserveAspectFit
+                                opacity: (itemMABar.containsMouse || musicManager.playMode === index) ? 1.0 : 0.5
+                                Behavior on opacity { NumberAnimation { duration: 120 } }
+                                transform: Translate { y: index === 3 ? -1 : 0 }
+
+                                MouseArea {
+                                    id: itemMABar
+                                    anchors.fill: parent
+                                    anchors.margins: -4
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onEntered: modeBtnBar.showModePopup()
+                                    onClicked: {
+                                        musicManager.playMode = index
+                                        modePopupBar.close()
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
 
             Item {
                 id: volumeBtn

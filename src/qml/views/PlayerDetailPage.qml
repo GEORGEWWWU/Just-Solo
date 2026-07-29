@@ -524,9 +524,11 @@ Item {
                             model: 5
                             Image {
                                 source: "qrc:/qt/qml/JustSolo/data/image/" + progressArea.modeIcons[index]
-                                width: 30; height: 30; fillMode: Image.PreserveAspectFit
+                                sourceSize.width: index === 4 ? 28 : 30; sourceSize.height: index === 4 ? 28 : 30
+                                width: index === 4 ? 28 : 30; height: index === 4 ? 28 : 30; fillMode: Image.PreserveAspectFit
                                 opacity: itemMA.containsMouse || musicManager.playMode === index ? 1.0 : 0.5
                                 Behavior on opacity { NumberAnimation { duration: 150 } }
+                                transform: Translate { y: index === 3 ? -1 : 0 }
 
                                 MouseArea {
                                     id: itemMA
