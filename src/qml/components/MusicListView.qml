@@ -137,11 +137,14 @@ ColumnLayout {
     // 同一 HomePage 实例切换 songList（所有音乐↔自定义列表）时触发定位
     onSongListChanged: {
         if (_suppressAutoScroll) {
-            // reorder 引起的模型变化：恢复滚动位置，再解禁自动定位
+            // reorder 使 C++ 返回新 QVariantList → 模型替换 → contentY 会重置为 0
+            // 在恢复滚动位置之前隐藏 ListView，避免闪一帧（contentY=0）
+            musicListView.opacity = 0
             Qt.callLater(function() {
                 musicListView.contentY = Math.min(root._savedContentY,
                     Math.max(0, musicListView.contentHeight - musicListView.height))
                 root._suppressAutoScroll = false
+                musicListView.opacity = 1
             })
         } else if (autoScrollEnabled && visible && musicManager.currentIndex >= 0) {
             Qt.callLater(function() { scrollToPlaying() })
