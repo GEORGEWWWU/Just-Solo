@@ -31,7 +31,7 @@ Just Solo 是一款追求简洁、高性能的本地音乐播放器。采用 C++
 
 原生支持 Windows SMTC 系统媒体控件和 Just Solo LyricServer 媒体信息传输协议（基于 WebSocket），深度适配 [NSD 灵动岛](https://github.com/GEORGEWWWU/NetSpeed-Dynamic)（由 [Ryenryen](https://github.com/GEORGEWWWU) 开发）。
 
-目前仅支持 Windows 平台，无任何网络功能，纯本地音乐播放。请前往 [Releases](releases) 下载最新安装包，软件内置检查更新功能（最新版）。
+目前仅支持 Windows 平台，专注于纯本地音乐播放。内置基于 libcurl 的 OTA 在线更新功能，支持检查更新并下载安装最新版本。请前往 [Releases](releases) 下载最新安装包。
 
 本项目的知识产权说明、免责声明等详见文末。
 
@@ -62,8 +62,8 @@ Just Solo 是一款追求简洁、高性能的本地音乐播放器。采用 C++
 
 ### 播放控制
 - 基本操作：播放 / 暂停 / 停止 / 上一首 / 下一首
-- **5 种播放模式**：顺序 / 列表循环 / 单曲循环 / 随机 / 关闭循环
-- 进度条支持点击拖动 seek，当前时间 / 总时长显示
+- **5 种播放模式**：顺序 / 列表循环 / 单曲循环 / 随机 / 关闭循环，底部控制栏新增弹窗菜单切换
+- **进度条**：支持点击拖动 seek，当前时间 / 总时长显示，高亮已播放区域
 - **全局快捷键**：默认 `Ctrl+Alt+Space` 播放/暂停，`Ctrl+Alt+←→` 上下首，支持自定义
 
 ### 音乐库管理
@@ -102,17 +102,17 @@ Just Solo 是一款追求简洁、高性能的本地音乐播放器。采用 C++
 - **系统原生标题栏**：DWM 深色自定义，Win11 三色定制（背景/文字/边框），Win10 强制深色主题
 
 ### 播放详情页
-- 点击封面全屏打开，毛玻璃背景（`ShaderEffectSource` + `MultiEffect` 实时模糊）
+- 点击封面打开，底部滑入滑出动画，背景深色半透明遮罩
 - 左侧：圆形封面 + 歌名（超长 marquee 滚动）+ 歌手 + 专辑
 - 右侧：逐行高亮歌词（已播/当前/未播三色）
-- 底部：播放模式切换（悬浮展开图标菜单）+ 可拖动进度条
-- 左下角原点缩放 + 透明度过渡开关动画，透明度 30%~100% 可调
+- 底部：可拖动进度条 + 播放模式切换按钮
+- 底部滑入动画 + 透明度过渡开关动画，透明度 30%~100% 可调
 
 ### 设置页面
-- **外观设置**：播放详情页透明度、模式菜单透明度、关闭最小化到托盘开关
+- **外观设置**：播放详情页透明度、音量菜单透明度、播放详情页模式菜单透明度、关闭最小化到托盘开关
 - **播放设置**：歌词预读偏移滑块、跨来源跟踪开关
 - **快捷键设置**：捕获模式卡片，按下组合键实时生效，独立重置按钮
-- **软件更新**：支持手动检查更新，允许用户点击下载并安装最新版本
+- **软件更新**：基于 libcurl 的 OTA 在线更新，支持手动检查与下载安装最新版本
 - **关于 JustSolo**：作者信息、项目地址、运行环境、LyricServer 协议状态
 
 ---
@@ -121,6 +121,7 @@ Just Solo 是一款追求简洁、高性能的本地音乐播放器。采用 C++
 
 - **UI**: Qt Quick (QML), Qt QuickControls2, Qt QuickLayouts
 - **后端**: C++17, Qt 6.8.3
+- **网络**: libcurl (OTA 在线更新)
 - **构建**: CMake 3.16+, Visual Studio 2026 (MSVC)
 - **字体**: HarmonyOS Sans SC
 
@@ -153,6 +154,8 @@ Just-Solo/
 │   │   ├── MetadataReader.h/cpp    # 元数据快速解析（MP3/FLAC/M4A）
 │   │   ├── SMTCManager.h/cpp       # Windows 系统媒体控件（SMTC）
 │   │   ├── HotkeyManager.h/cpp     # 全局快捷键管理器
+│   │   ├── CurlRequest.h/cpp       # libcurl 网络请求封装
+│   │   ├── UpdateChecker.h/cpp     # OTA 在线更新检查
 │   │   └── miniaudio.h             # miniaudio 单头文件库
 │   ├── services/
 │   │   ├── LyricServer.h/cpp       # LyricServer WebSocket 歌词推送服务
@@ -173,14 +176,16 @@ Just-Solo/
 ├── data/
 │   ├── image/
 │   │   ├── logo.ico / logo.png / logo2.png  # 程序图标
-│   │   ├── home.png / mylike.png / history.png / PlayList.png / AddToPlayList.png # 导航图标
-│   │   ├── creatList.png / SelfList.png       # 自建列表图标
-│   │   ├── drag.png                           # 拖放提示图标
-│   │   ├── play.png / playing.png             # 播放控制图标
+│   │   ├── home.png / mylike.png / mylike-on.png / mylike-off.png / history.png / PlayList.png / AddToPlayList.png # 导航与操作图标
+│   │   ├── creatList.png                    # 自建列表图标
+│   │   ├── setting.png / menu.png / drag.png # 设置、菜单、拖放提示图标
+│   │   ├── play.png / playing.png / next.png / prve.png / back.png / volume-logo.png # 播放控制与音量图标
 │   │   ├── mode_sequential.png / mode_loop.png / mode_single.png / mode_shuffle.png / mode_stop.png # 播放模式图标
-│   │   └── backgroud.png       # 背景图
+│   │   └── photo-1.png / backgroud.png       # 展示图与背景图
 │   └── font/
 │       └── HarmonyOS_Sans_SC_Regular.ttf    # 字体文件（HarmonyOS Sans SC）
+├── third_party/
+│   └── curl/                   # libcurl 依赖（bin/include/lib）
 ├── resources/
 │   └── app.rc                  # Windows 资源文件（嵌入 ico）
 └── release/                    # 打包输出目录（由 package.ps1 生成）
@@ -197,6 +202,7 @@ Just-Solo/
 | Qt 6.8.3 | msvc2022_64 |
 | CMake | 3.16+ |
 | Visual Studio | 2022+ (含 MSVC 工具链) |
+| libcurl | 项目内置 third_party/curl |
 
 ### 配置
 
@@ -252,7 +258,7 @@ cmake --build build --config Release
 - **这个项目对比AnyListen等其他音乐播放器有什么区别？**：
   - 这个项目的初衷是为了提供一个纯粹、轻量的音乐播放器。
   - 对比AnyListen等其他使用Electron框架的音乐播放器，我们的项目使用的是Qt框架，聚焦高性能、低占用。
-  - 这个项目现阶段不会添加任何网络等功能，只提供本地音乐播放。（推荐使用LX Music下载音乐）
+  - 这个项目以本地音乐播放为核心，内置 OTA 在线更新功能（基于 libcurl），不提供音乐下载等网络服务。（推荐使用 LX Music 下载音乐）
 - **这个项目会维护多久？**：
   - 我们计划在2026年暑假内完成核心功能，后续大概会进入LTS维护状态。
   - 进入LTS维护状态后，我们不会再有大量新功能同时添加，但我们会继续维护和修复bug。
