@@ -1224,6 +1224,7 @@ Window {
         anchors.right: parent.right
         height: playerBarHeight
         color: "#181818"
+        z: 101
 
         property double progressFraction: musicManager.duration > 0 ? musicManager.position / Math.max(1, musicManager.duration) : 0
         property int currentSeconds: Math.floor(musicManager.position / 1000)
@@ -1422,7 +1423,10 @@ Window {
                     onEntered: playerCoverRect.color = "#4A4A4A"
                     onExited: playerCoverRect.color = "#3A3A3A"
                     onClicked: {
-                        if (musicManager.currentIndex >= 0) showPlayerDetail = true
+                        if (musicManager.currentIndex >= 0) {
+                            showPlayerDetail = true
+                            playerDetail.reopen()
+                        }
                     }
                 }
             }
@@ -2160,7 +2164,7 @@ Window {
                             Label {
                                 text: modelData.artist || "未知歌手"
                                 font.family: appFont.name; font.pixelSize: 11
-                                color: libItemRoot._iai ? "#555" : "#888"
+                                color: libItemRoot._iai ? "#3B82F6" : "#888"
                                 elide: Text.ElideRight; Layout.fillWidth: true
                             }
                         }

@@ -11,16 +11,17 @@ Item {
     property bool opening: false
     property int _lastScroll: -1
     property int _pastIdx: -1  // 已播放到的歌词行索引（前进时增大，回退时重置）
-    property real originX: 0
-    property real originY: root.height
+
+    // 页面滑动偏移量（初始推至视口外，动画直接修改此值，避免绑定被 QML 重求值）
+    property real _slideOffset: root.height
 
     opacity: 0
     visible: false
 
-    transform: Scale {
-        id: scaler
-        origin.x: root.originX; origin.y: root.originY
-        xScale: 0.3; yScale: 0.3
+    // 使用位移来实现滑动，初始把整个页面向下推至视口外 (y: root.height)
+    transform: Translate {
+        id: slider
+        y: _slideOffset
     }
 
     function fmtTime(ms) {
@@ -34,27 +35,33 @@ Item {
         closeAnim.start()
     }
 
-    onVisibleChanged: {
+    // 强制重新打开（处理意外隐藏/状态不同步的情况）
+    function reopen() {
+        openAnim.stop()
+        closeAnim.stop()
+        opening = true
+        _lastScroll = -1
         if (visible) {
-            bgBlur.live = true
-            blurFx.blurEnabled = true
-            bgBlur.scheduleUpdate()
-            _lastScroll = -1
-            opening = true
-            // 等毛玻璃渲染就绪后再开始动画（约 2-3 帧）
-            blurReadyTimer.restart()
+            // visible 仍为 true，但可能被动画中断导致 opacity=0 / _slideOffset=height
+            // 直接重置状态并主动启动打开动画
+            _slideOffset = root.height
+            opacity = 0
+            openAnim.start()
         } else {
-            blurFx.blurEnabled = false
-            bgBlur.live = false
-            openAnim.stop(); closeAnim.stop()
-            blurReadyTimer.stop()
+            visible = true
+            // onVisibleChanged 中将启动 openAnim.start()
         }
     }
 
-    Timer {
-        id: blurReadyTimer
-        interval: 80
-        onTriggered: openAnim.start()
+    onVisibleChanged: {
+        if (visible) {
+            _lastScroll = -1
+            opening = true
+            openAnim.start() // 直接启动动画，不再等待毛玻璃渲染
+        } else {
+            openAnim.stop()
+            closeAnim.stop()
+        }
     }
 
     Connections {
@@ -82,23 +89,54 @@ Item {
     SequentialAnimation {
         id: openAnim
         ParallelAnimation {
-            OpacityAnimator { target: root; to: 1; duration: 250; easing.type: Easing.Linear }
-            NumberAnimation { target: scaler; properties: "xScale,yScale"; to: 1; duration: 350; easing.type: Easing.Linear }
+            // 透明度：从 0 到 1
+            OpacityAnimator { 
+                target: root
+                to: 1
+                duration: 350
+                easing.type: Easing.OutCubic // 非线性：先快后慢，平滑刹车
+            }
+            // 位置：从底部 (root.height) 滑动到正常位置 (0)
+            NumberAnimation { 
+                target: root
+                property: "_slideOffset"
+                from: root.height
+                to: 0
+                duration: 350
+                easing.type: Easing.OutCubic
+            }
         }
         ScriptAction { script: root.opening = false }
     }
+
     SequentialAnimation {
         id: closeAnim
         ParallelAnimation {
-            OpacityAnimator { target: root; to: 0; duration: 200; easing.type: Easing.Linear }
-            NumberAnimation { target: scaler; properties: "xScale,yScale"; to: 0.3; duration: 250; easing.type: Easing.Linear }
+            // 透明度：从 1 到 0
+            OpacityAnimator { 
+                target: root
+                to: 0
+                duration: 250
+                easing.type: Easing.InCubic // 非线性：先慢后快，加速退出
+            }
+            // 位置：从 0 滑动回底部 (root.height)
+            NumberAnimation { 
+                target: root
+                property: "_slideOffset"
+                to: root.height
+                duration: 250
+                easing.type: Easing.InCubic 
+            }
         }
-        onFinished: root.visible = false
+        onFinished: {
+            root.visible = false
+        }
     }
 
     // 全屏事件屏蔽层（阻止所有操作穿透到下层）
     MouseArea {
         anchors.fill: parent
+        anchors.bottomMargin: 75 // 放行底部 75px 的鼠标点击事件
         acceptedButtons: Qt.AllButtons
         hoverEnabled: false        // 无 hover 视觉反馈，关闭减少事件开销
         preventStealing: true
@@ -108,22 +146,13 @@ Item {
     }
 
     // ============================================================
-    // 毛玻璃背景
+    // 背景
     // ============================================================
-    ShaderEffectSource {
-        id: bgBlur
+    Rectangle { 
         anchors.fill: parent
-        sourceItem: mainWindow.contentItem
-        live: false; visible: false
+        anchors.bottomMargin: 75 // 让出底部的画面，露出 main.qml 的控制栏
+        color: "#1E1E1E" 
     }
-    MultiEffect {
-        id: blurFx
-        anchors.fill: parent
-        source: bgBlur
-        blurEnabled: true; blurMax: 24; blur: 0.6
-        brightness: 0.15; saturation: 0.1
-    }
-    Rectangle { anchors.fill: parent; color: Qt.rgba(0.05, 0.05, 0.09, musicManager ? musicManager.detailOpacity : 0.85) }
 
     // 关闭按钮
     Rectangle {
@@ -131,8 +160,23 @@ Item {
         anchors.topMargin: 14; anchors.rightMargin: 22
         width: 36; height: 36; radius: 18
         color: closeMA.containsMouse ? "#33ffffff" : "transparent"
-        Text { anchors.centerIn: parent; text: "\u25BC"; font.family: root.fontFamily; font.pixelSize: 15; color: closeMA.containsMouse ? "#ccc" : "#777" }
-        MouseArea { id: closeMA; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: root.close() }
+
+        Image {
+            anchors.centerIn: parent
+            width: 18; height: 18
+            source: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='" 
+                    + (closeMA.containsMouse ? "%23cccccc" : "%23777777") 
+                    + "' stroke-width='2.5' stroke-linecap='round'><path d='M18 6L6 18M6 6l12 12'/></svg>"
+            fillMode: Image.PreserveAspectFit
+        }
+
+        MouseArea { 
+            id: closeMA
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: root.close() 
+        }
     }
 
     // ============================================================
@@ -140,25 +184,17 @@ Item {
     // ============================================================
     Item {
         id: mainBody
-        anchors.top: parent.top; anchors.bottom: bottomBar.top
+        anchors.top: parent.top; anchors.bottom: parent.bottom
         anchors.left: parent.left; anchors.right: parent.right
-        anchors.topMargin: 46; anchors.bottomMargin: 8
-        anchors.leftMargin: 20; anchors.rightMargin: 30
-
-        Rectangle {
-            id: divider
-            anchors.left: coverArea.right; anchors.leftMargin: 16
-            anchors.top: parent.top; anchors.bottom: parent.bottom
-            anchors.topMargin: 10; anchors.bottomMargin: 10
-            width: 1; color: "#22ffffff"
-        }
+        anchors.topMargin: 46; anchors.bottomMargin: 75
 
         // 左：封面 + 歌名 + 歌手 + 专辑
         Item {
             id: coverArea
             anchors.top: parent.top; anchors.bottom: parent.bottom
             anchors.left: parent.left
-            width: mainWindow.visibility === Window.Maximized ? parent.width * 0.333 : Math.min(parent.width * 0.38, 360)
+            width: mainWindow.visibility === Window.Maximized ? 
+                   parent.width * 0.4 : Math.min(parent.width * 0.45, 420)
 
             Rectangle {
                 id: coverBox
@@ -166,14 +202,26 @@ Item {
                 y: Math.max(0, parent.height * 0.04)
                 width: Math.min(parent.width * 0.85, parent.height * 0.42)
                 height: width; radius: 12; color: "#222222"
-                border.color: "#222222"; border.width: 1
 
                 Image {
+                    id: coverImg
                     anchors.fill: parent; anchors.margins: 3
                     source: (typeof musicManager !== "undefined" && musicManager) ? (musicManager.currentCover || "") : ""
                     fillMode: Image.PreserveAspectFit; asynchronous: true
                     visible: source !== ""
                     opacity: status === Image.Ready ? 1 : 0
+
+                    layer.enabled: true
+                    layer.effect: MultiEffect {
+                        maskEnabled: true
+                        maskSource: ShaderEffectSource {
+                            sourceItem: Rectangle {
+                                width: coverImg.width
+                                height: coverImg.height
+                                radius: 9 // 背景的 radius(12) 减去 margins(3)
+                            }
+                        }
+                    }
                 }
                 Text {
                     anchors.centerIn: parent; font.family: root.fontFamily
@@ -250,13 +298,13 @@ Item {
         Item {
             id: lyricsCol
             anchors.top: parent.top; anchors.bottom: parent.bottom
-            anchors.left: divider.right; anchors.right: parent.right
+            anchors.left: coverArea.right; anchors.right: parent.right
             anchors.leftMargin: 20
             clip: true
 
             Text {
                 anchors.centerIn: parent
-                text: "暂无歌词"; font.family: root.fontFamily; font.pixelSize: 20; color: "#555"
+                text: "暂无歌词"; font.family: root.fontFamily; font.pixelSize: 20; color: "#3B82F6"
                 visible: lyricsView.count === 0
             }
 
@@ -339,270 +387,6 @@ Item {
                         }
                     }
                 }
-            }
-        }
-    }
-
-    // ============================================================
-    // 底部：三个按钮对齐 + 进度条
-    // ============================================================
-    Item {
-        id: bottomBar
-        anchors.bottom: parent.bottom; anchors.left: parent.left; anchors.right: parent.right
-        anchors.bottomMargin: 24
-        height: 44
-
-        // 三个按钮居中对齐（同一 Y 轴）
-        Row {
-            id: controls
-            anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter
-            anchors.leftMargin: 24; spacing: 20
-            height: 40
-
-            // 上一首
-            Item {
-                width: 40; height: 40
-                anchors.verticalCenter: parent.verticalCenter
-                Image { anchors.centerIn: parent; source: "qrc:/qt/qml/JustSolo/data/image/play.png"; width: 26; height: 26; opacity: 0.4; rotation: 180 }
-                MouseArea { anchors.fill: parent; anchors.margins: -6; cursorShape: Qt.PointingHandCursor; onClicked: musicManager.previous() }
-            }
-            // 播放/暂停
-            Rectangle {
-                width: 40; height: 40; radius: 20; color: "#3A3A3A"
-                anchors.verticalCenter: parent.verticalCenter
-                Image { source: "qrc:/qt/qml/JustSolo/data/image/play.png"; width: 22; height: 22; anchors.centerIn: parent; opacity: musicManager.isPlaying ? 0 : 1; Behavior on opacity { NumberAnimation { duration: 120 } } }
-                Image { source: "qrc:/qt/qml/JustSolo/data/image/playing.png"; width: 22; height: 22; anchors.centerIn: parent; opacity: musicManager.isPlaying ? 1 : 0; Behavior on opacity { NumberAnimation { duration: 120 } } }
-                MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: { if (musicManager.currentIndex >= 0) musicManager.isPlaying ? musicManager.pause() : musicManager.play() } }
-            }
-            // 下一首
-            Item {
-                width: 40; height: 40
-                anchors.verticalCenter: parent.verticalCenter
-                Image { anchors.centerIn: parent; source: "qrc:/qt/qml/JustSolo/data/image/play.png"; width: 26; height: 26; opacity: 0.4 }
-                MouseArea { anchors.fill: parent; anchors.margins: -6; cursorShape: Qt.PointingHandCursor; onClicked: musicManager.next() }
-            }
-
-            // ---- 音量按钮 ----
-            Item {
-                id: volumeBtnDetail
-                width: 28; height: 40
-                anchors.verticalCenter: parent.verticalCenter
-
-                Image {
-                    anchors.centerIn: parent
-                    source: "qrc:/qt/qml/JustSolo/data/image/volume-logo.png"
-                    width: 24; height: 24
-                    opacity: volumeMADetail.containsMouse ? 0.9 : 0.45
-                    Behavior on opacity { NumberAnimation { duration: 100 } }
-                }
-                MouseArea {
-                    id: volumeMADetail
-                    anchors.fill: parent; anchors.margins: -6
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onEntered: { volumeLeave.stop(); volumePopupDetail.open() }
-                    onExited: volumeLeave.restart()
-                }
-
-                Timer {
-                    id: volumeLeave
-                    interval: 250
-                    onTriggered: volumePopupDetail.close()
-                }
-
-                Popup {
-                    id: volumePopupDetail
-                    x: parent.width / 2 - width / 2
-                    y: -height - 14
-                    width: 180; height: 48
-                    padding: 8
-
-                    background: Rectangle {
-                        radius: 8; color: "#222222"
-                        opacity: (typeof musicManager !== "undefined" && musicManager) ? (musicManager.menuOpacity || 0.80) : 0.80
-                        border.color: "#3A3A3A"; border.width: 1
-                    }
-
-                    RowLayout {
-                        width: parent.width; height: parent.height
-                        spacing: 8
-
-                        Label {
-                            text: Math.round(musicManager.volume * 100)
-                            font.family: root.fontFamily
-                            font.pixelSize: 12
-                            color: "#aaa"
-                            Layout.preferredWidth: 28
-                            horizontalAlignment: Text.AlignRight
-                        }
-
-                        Slider {
-                            id: volumeSliderDetail
-                            Layout.fillWidth: true
-                            from: 0; to: 1; value: musicManager.volume
-                            snapMode: Slider.NoSnap
-                            live: true
-                            onMoved: musicManager.volume = value
-
-                            background: Rectangle {
-                                implicitHeight: 4; radius: 2; color: "#3A3A3A"
-                                Rectangle {
-                                    width: volumeSliderDetail.visualPosition * parent.width
-                                    height: parent.height; radius: 2; color: "#00d4ff"
-                                }
-                            }
-
-                            handle: Item { }
-                        }
-
-                        Label {
-                            text: "%"
-                            font.family: root.fontFamily
-                            font.pixelSize: 12; color: "#666"
-                            Layout.preferredWidth: 14
-                        }
-                    }
-                }
-            }
-        }
-
-        // 进度条（含模式按钮，右置固定宽度区块）
-        Item {
-            id: progressArea
-            width: parent.width * 0.48
-            anchors.right: parent.right; anchors.rightMargin: 60
-            anchors.verticalCenter: parent.verticalCenter
-            height: 28
-
-            property var modeIcons: ["mode_sequential.png", "mode_loop.png", "mode_single.png", "mode_shuffle.png", "mode_stop.png"]
-            property var modeLabels: ["顺序播放", "列表循环", "单曲循环", "随机播放", "关闭循环"]
-
-            // ---- 模式按钮（悬浮自动展开菜单） ----
-            Item {
-                id: modeBtn
-                width: 28; height: 28
-                anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter
-
-                Image {
-                    anchors.fill: parent
-                    source: "qrc:/qt/qml/JustSolo/data/image/" + progressArea.modeIcons[musicManager.playMode]
-                    fillMode: Image.PreserveAspectFit
-                    opacity: modeMA.containsMouse ? 1 : 0.6
-                    Behavior on opacity { NumberAnimation { duration: 150 } }
-                }
-
-                MouseArea {
-                    id: modeMA
-                    anchors.fill: parent; anchors.margins: -4
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onEntered: { modeLeave.stop(); modeMenu.open() }
-                    onExited: modeLeave.restart()
-                }
-
-                Timer {
-                    id: modeLeave
-                    interval: 250
-                    onTriggered: modeMenu.close()
-                }
-
-                Popup {
-                    id: modeMenu
-                    x: modeBtn.width / 2 - width / 2
-                    y: -height - 8
-                    padding: 4
-                    background: Rectangle {
-                        radius: 8; color: "#222222"
-                        opacity: (typeof musicManager !== "undefined" && musicManager) ? (musicManager.menuOpacity || 0.80) : 0.80
-                        border.color: "#3A3A3A"; border.width: 1
-                    }
-                    closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
-
-                    Row {
-                        spacing: 6
-                        Repeater {
-                            model: 5
-                            Image {
-                                source: "qrc:/qt/qml/JustSolo/data/image/" + progressArea.modeIcons[index]
-                                sourceSize.width: index === 4 ? 28 : 30; sourceSize.height: index === 4 ? 28 : 30
-                                width: index === 4 ? 28 : 30; height: index === 4 ? 28 : 30; fillMode: Image.PreserveAspectFit
-                                opacity: itemMA.containsMouse || musicManager.playMode === index ? 1.0 : 0.5
-                                Behavior on opacity { NumberAnimation { duration: 150 } }
-                                transform: Translate { y: index === 3 ? -1 : 0 }
-
-                                MouseArea {
-                                    id: itemMA
-                                    anchors.fill: parent; anchors.margins: -4
-                                    hoverEnabled: true
-                                    cursorShape: Qt.PointingHandCursor
-                                    onEntered: modeLeave.stop()
-                                    onClicked: {
-                                        musicManager.playMode = index
-                                        modeMenu.close()
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            // ---- 当前时间 ----
-            Text {
-                anchors.left: modeBtn.right; anchors.leftMargin: 12
-                anchors.verticalCenter: parent.verticalCenter
-                text: root.fmtTime(musicManager.position)
-                font.family: root.fontFamily; font.pixelSize: 11; color: "#888"
-            }
-
-            // ---- 进度条 ----
-            Rectangle {
-                id: progressTrack
-                anchors.left: parent.left; anchors.leftMargin: 72
-                anchors.right: parent.right; anchors.rightMargin: 40
-                anchors.verticalCenter: parent.verticalCenter
-                height: 4; radius: 2; color: "#3A3A3A"
-
-                Rectangle {
-                    id: progressFill
-                    height: parent.height; radius: 2; color: "#00d4ff"
-                    readonly property real autoRatio: musicManager.duration > 0 ? musicManager.position / musicManager.duration : 0
-                    width: parent.width * (seekMA.pressed ? seekMA._dragRatio : autoRatio)
-                    Behavior on width {
-                        enabled: root.visible
-                        NumberAnimation { duration: 300; easing.type: Easing.OutCubic }
-                    }
-                }
-
-                MouseArea {
-                    id: seekMA
-                    anchors.fill: parent
-                    anchors.topMargin: -8; anchors.bottomMargin: -8
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    preventStealing: true
-
-                    property real _dragRatio: 0
-                    property real _trackW: 0
-
-                    function seek(mx) {
-                        var w = seekMA.pressed ? _trackW : progressTrack.width
-                        _dragRatio = Math.max(0, Math.min(1, mx / w))
-                        if (musicManager.duration > 0)
-                            musicManager.seek(_dragRatio * musicManager.duration)
-                    }
-
-                    onPressed: function(m) { _trackW = progressTrack.width; seek(m.x) }
-                    onPositionChanged: function(m) { if (pressed) seek(m.x) }
-                    onClicked: function(m) { seek(m.x) }
-                }
-            }
-
-            // ---- 总时间 ----
-            Text {
-                anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter
-                text: root.fmtTime(musicManager.duration)
-                font.family: root.fontFamily; font.pixelSize: 11; color: "#888"
             }
         }
     }
