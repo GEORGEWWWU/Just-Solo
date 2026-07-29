@@ -86,7 +86,10 @@ qt_add_qml_module(JustSolo
         data/image/logo2.png
         data/image/logo.ico
         data/image/home.png
+        data/image/menu.png
         data/image/mylike.png
+        data/image/mylike-on.png
+        data/image/mylike-off.png
         data/image/history.png
         data/image/play.png
         data/image/playing.png

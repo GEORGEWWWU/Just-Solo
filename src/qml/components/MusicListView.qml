@@ -11,12 +11,6 @@ ColumnLayout {
     spacing: 0
     clip: true
 
-    // ESC 退出排序模式
-    focus: root.manualSortMode
-    Keys.onEscapePressed: {
-        if (root.manualSortMode) root.toggleSortMode()
-    }
-
     property int sidebarWidth: 230
     property int windowWidth: 1200
     property var rightClickedTrack: null
@@ -42,10 +36,12 @@ ColumnLayout {
     // 是否显示默认右键菜单项（收藏/取消收藏、删除此歌曲）
     property bool showDefaultContextMenu: true
 
-    // ---- 手动排序 ----
-    property bool manualSortMode: false
-    property bool supportsManualSort: true       // 页面是否支持手动排序
-    property string manualSortDisabledMessage: "" // 不支持时的提示消息（为空则无反应）
+    property int _pendingIndex: -1
+
+    // ---- 右键菜单状态 ----
+    property bool contextMenuOpen: false
+
+    // ---- 拖拽排序 ----
     property int draggedIndex: -1
     property int dropTargetIndex: -1
     property var draggedTrack: null
@@ -58,19 +54,6 @@ ColumnLayout {
     property real _dropIndicatorY: 0      // 浮动放置指示线 Y
     property int _autoScrollFinalIndex: -1 // 自动滚动期间计算的最终目标索引
 
-    // 切换手动排序模式
-    function toggleSortMode() {
-        manualSortMode = !manualSortMode
-        if (!manualSortMode) {
-            draggedIndex = -1
-            dropTargetIndex = -1
-            draggedTrack = null
-            dragOverlay.visible = false
-            _autoScrollFinalIndex = -1
-        }
-    }
-
-    // 根据页面上下文调用对应的 C++ 移动方法
     function reorderSong(fromIdx, toIdx) {
         if (fromIdx === toIdx) return
         if (fromIdx < 0 || toIdx < 0) return
@@ -113,16 +96,16 @@ ColumnLayout {
         return ""
     }
 
-    // ---- 列宽 (2:2:2:2:1) ----
-    property int colPlay: 36
+    // ---- 列宽 ----
+    property int colIndex: 24
+    property int colFav: 28
+    property int colMenu: 28
     property real _totalW: Math.max(400,
-        (musicListView.width > 0 ? musicListView.width : windowWidth - sidebarWidth - 80) - 20 - colPlay)
+        (musicListView.width > 0 ? musicListView.width : windowWidth - sidebarWidth - 80) - 20 - colIndex - colFav - colMenu)
     property real colCover:    Math.max(40, _totalW * 2 / 9)
-    property real colTitle:    Math.max(60, _totalW * 2 / 9)
-    property real colArtist:   Math.max(50, _totalW * 2 / 9)
+    property real colTitle:    Math.max(60, _totalW * 3 / 9)   // 标题 + 歌手 + 音质
     property real colAlbum:    Math.max(50, _totalW * 2 / 9)
-    property real colDuration: Math.max(36, _totalW * 1 / 9)
-    property int _pendingIndex: -1
+    property real colDuration: Math.max(36, _totalW * 2 / 9)
     property string dialogMode: "home"   // "home" / "custom" / "switch"
     property int dialogTarget: -1        // "switch" 模式的目标 playlistSource
 
@@ -144,8 +127,6 @@ ColumnLayout {
     }
 
     onVisibleChanged: {
-        // 页面不可见时自动退出排序
-        if (!visible && manualSortMode) toggleSortMode()
         if (autoScrollEnabled && visible && musicManager.currentIndex >= 0) {
             scrollToPlaying()
         }
@@ -181,57 +162,6 @@ ColumnLayout {
         dialogMode = mode
         dialogTarget = target
         switchSourceDialog.open()
-    }
-
-    // ---- 列标题 ----
-    Rectangle {
-        Layout.fillWidth: true; height: 32; color: "transparent"
-        visible: songList.length > 0
-        RowLayout {
-            anchors.fill: parent; anchors.margins: 5; anchors.leftMargin: 8; spacing: 0
-            Item { Layout.preferredWidth: root.colCover; Layout.maximumWidth: 40 }
-            Label { text: "标题"; font.family: fontFamily; font.pixelSize: 15; color: "#969696"; Layout.fillWidth: true; Layout.preferredWidth: root.colTitle; verticalAlignment: Text.AlignVCenter }
-            Label { text: "歌手"; font.family: fontFamily; font.pixelSize: 15; color: "#969696"; Layout.fillWidth: true; Layout.preferredWidth: root.colArtist; verticalAlignment: Text.AlignVCenter }
-            Label { text: "专辑"; font.family: fontFamily; font.pixelSize: 15; color: "#969696"; Layout.fillWidth: true; Layout.preferredWidth: root.colAlbum; verticalAlignment: Text.AlignVCenter }
-            Label { text: "时长"; font.family: fontFamily; font.pixelSize: 15; color: "#969696"; Layout.preferredWidth: root.colDuration; verticalAlignment: Text.AlignVCenter; horizontalAlignment: Text.AlignRight }
-            Item { Layout.preferredWidth: root.colPlay }
-        }
-    }
-    Rectangle { Layout.fillWidth: true; height: 1; color: "#222222"; visible: songList.length > 0 }
-
-    // ---- 排序模式提示条 ----
-    Rectangle {
-        Layout.fillWidth: true
-        Layout.preferredHeight: root.manualSortMode ? 30 : 0
-        visible: root.manualSortMode
-        color: "#2a3550"
-        radius: 4
-        clip: true
-        Behavior on Layout.preferredHeight { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
-
-        RowLayout {
-            anchors.fill: parent
-            anchors.leftMargin: 12; anchors.rightMargin: 12
-            spacing: 8
-            Label {
-                text: "⇅"
-                font.family: fontFamily; font.pixelSize: 15; color: "#00d4ff"
-            }
-            Label {
-                text: "排序模式 — 拖拽排序，拖到边缘自动滚动"
-                font.family: fontFamily; font.pixelSize: 12; color: "#00d4ff"
-                Layout.fillWidth: true
-            }
-            Label {
-                text: "ESC 退出"
-                font.family: fontFamily; font.pixelSize: 12; color: "#888"
-                MouseArea {
-                    anchors.fill: parent
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: root.toggleSortMode()
-                }
-            }
-        }
     }
 
     // ---- 歌曲列表 ----
@@ -270,14 +200,14 @@ ColumnLayout {
             fontFamily: root.fontFamily
             colCover: root.colCover
             colTitle: root.colTitle
-            colArtist: root.colArtist
             colAlbum: root.colAlbum
             colDuration: root.colDuration
-            colPlay: root.colPlay
-            sortMode: root.manualSortMode
-            isDragged: root.manualSortMode && root.draggedIndex === index
-            showDropAbove: root.manualSortMode && root.dropTargetIndex === index && root.draggedIndex !== index
-            showDropBelow: false
+            colIndex: root.colIndex
+            colFav: root.colFav
+            colMenu: root.colMenu
+            isDragged: root.draggedIndex === index
+            showDropAbove: root.dropTargetIndex === index && root.draggedIndex !== index
+            contextMenuOpen: root.contextMenuOpen
 
             Behavior on opacity {
                 NumberAnimation { duration: 0 }
@@ -340,7 +270,7 @@ ColumnLayout {
                 }
             }
 
-            opacity: (root.manualSortMode && root.draggedIndex === index) ? 0.4 : 1.0
+            opacity: (root.draggedIndex >= 0 && root.draggedIndex === index) ? 0.4 : 1.0
 
             onLeftClicked: {
                 if (root.onLeftClick) {
@@ -391,23 +321,6 @@ ColumnLayout {
             }
         }
 
-        // ---- 浮动放置指示线（自动滚动时平滑跟随） ----
-        Rectangle {
-            id: dropIndicator
-            z: 998
-            visible: dragOverlay.visible
-            anchors.horizontalCenter: parent.horizontalCenter
-            width: musicListView.width - 20
-            height: 3
-            radius: 1.5
-            color: "#00d4ff"
-            opacity: 0.85
-            y: root._dropIndicatorY
-
-            Behavior on y { NumberAnimation { duration: 80; easing.type: Easing.OutQuad } }
-            Behavior on opacity { NumberAnimation { duration: 120 } }
-        }
-
         // ---- 拖拽浮层（排序模式时跟随鼠标） ----
         Rectangle {
             id: dragOverlay
@@ -418,7 +331,7 @@ ColumnLayout {
             height: 50
             radius: 8
             color: "#333333"
-            border.color: "#00d4ff"
+            border.color: "#3B82F6"
             border.width: 1.5
             opacity: 0.95
             y: root.dragOverlayY
@@ -433,6 +346,7 @@ ColumnLayout {
                 anchors.leftMargin: 8
                 spacing: 0
 
+                // 拖拽图标
                 Item {
                     Layout.preferredWidth: 28
                     Layout.preferredHeight: parent.height
@@ -443,6 +357,17 @@ ColumnLayout {
                         width: 16; height: 16
                         opacity: 1.0
                     }
+                }
+
+                // 序号
+                Label {
+                    Layout.preferredWidth: root.colIndex
+                    Layout.alignment: Qt.AlignVCenter
+                    text: root.draggedTrack ? ("0" + (root.draggedIndex + 1)).slice(-2) : ""
+                    font.family: root.fontFamily; font.pixelSize: 13; color: "#777777"
+                    horizontalAlignment: Text.AlignRight
+                    verticalAlignment: Text.AlignVCenter
+                    Layout.rightMargin: 6
                 }
 
                 Rectangle {
@@ -467,48 +392,75 @@ ColumnLayout {
                 Item {
                     Layout.fillWidth: true; Layout.preferredWidth: root.colTitle
                     Layout.preferredHeight: 40; Layout.alignment: Qt.AlignVCenter
+                    Layout.leftMargin: 8
+                    clip: true
                     Label {
                         text: root.draggedTrack ? (root.draggedTrack.name || "") : ""
                         font.family: root.fontFamily; font.pixelSize: 15; font.bold: true
-                        color: "#d4d4d4"; elide: Text.ElideRight; width: parent.width
+                        color: "#FFFFFF"; elide: Text.ElideRight; width: parent.width
                         anchors.top: parent.top; anchors.left: parent.left
                     }
-                    Rectangle {
-                        visible: root.draggedTrack && root.draggedTrack.quality && root.draggedTrack.quality !== ""
-                        width: Math.max(qualityOverlayText.contentWidth + 8, 20)
-                        height: 16; radius: 3; color: "#D4AF37"
+                    Row {
                         anchors.bottom: parent.bottom; anchors.left: parent.left
+                        spacing: 3
                         Label {
-                            id: qualityOverlayText
-                            text: root.draggedTrack ? (root.draggedTrack.quality || "") : ""
-                            font.family: root.fontFamily; font.pixelSize: 10; font.bold: true
-                            color: "white"; anchors.centerIn: parent
+                            text: root.draggedTrack ? (root.draggedTrack.artist || "未知") : ""
+                            font.family: root.fontFamily; font.pixelSize: 13; color: "#777777"
+                            elide: Text.ElideRight
+                            width: Math.min(implicitWidth,
+                                parent.parent.width - (qualityOverlayRect.visible ? qualityOverlayRect.width + parent.spacing + 2 : 0) - 2)
+                            visible: root.draggedTrack && root.draggedTrack.artist && root.draggedTrack.artist !== ""
+                        }
+                        Rectangle {
+                            id: qualityOverlayRect
+                            width: qualityOverlayText.contentWidth + 8
+                            height: 18
+                            radius: 3; color: "#80777777"
+                            visible: root.draggedTrack && root.draggedTrack.quality && root.draggedTrack.quality !== ""
+                            Label {
+                                id: qualityOverlayText
+                                text: root.draggedTrack ? (root.draggedTrack.quality || "") : ""
+                                font.family: root.fontFamily; font.pixelSize: 10; font.bold: true
+                                color: "white"; anchors.centerIn: parent
+                            }
                         }
                     }
                 }
 
                 Label {
-                    text: root.draggedTrack ? (root.draggedTrack.artist || "未知") : ""
-                    font.family: root.fontFamily; font.pixelSize: 15; color: "#969696"
-                    elide: Text.ElideRight; verticalAlignment: Text.AlignVCenter
-                    Layout.fillWidth: true; Layout.fillHeight: true; Layout.preferredWidth: root.colArtist
-                }
-
-                Label {
                     text: root.draggedTrack ? (root.draggedTrack.album || "") : ""
-                    font.family: root.fontFamily; font.pixelSize: 15; color: "#888888"
+                    font.family: root.fontFamily; font.pixelSize: 15; color: "#777777"
                     elide: Text.ElideRight; verticalAlignment: Text.AlignVCenter
                     Layout.fillWidth: true; Layout.fillHeight: true; Layout.preferredWidth: root.colAlbum
                 }
 
                 Label {
                     text: root.draggedTrack ? (root.draggedTrack.durationText || "") : ""
-                    font.family: root.fontFamily; font.pixelSize: 15; color: "#969696"
+                    font.family: root.fontFamily; font.pixelSize: 15; color: "#777777"
                     verticalAlignment: Text.AlignVCenter; horizontalAlignment: Text.AlignRight
                     Layout.fillHeight: true; Layout.preferredWidth: root.colDuration
                 }
 
-                Item { Layout.preferredWidth: root.colPlay; Layout.preferredHeight: 20; Layout.alignment: Qt.AlignVCenter }
+                Image {
+                    Layout.preferredWidth: root.colFav
+                    Layout.alignment: Qt.AlignVCenter
+                    source: {
+                        musicManager.favorites;
+                        root.draggedTrack && musicManager.isFavorite(root.draggedTrack)
+                            ? "qrc:/qt/qml/JustSolo/data/image/mylike-on.png"
+                            : "qrc:/qt/qml/JustSolo/data/image/mylike-off.png"
+                    }
+                    sourceSize.width: 16; sourceSize.height: 16
+                    fillMode: Image.PreserveAspectFit
+                }
+
+                Image {
+                    Layout.preferredWidth: root.colMenu
+                    Layout.alignment: Qt.AlignVCenter
+                    source: "qrc:/qt/qml/JustSolo/data/image/menu.png"
+                    sourceSize.width: 16; sourceSize.height: 16
+                    fillMode: Image.PreserveAspectFit
+                }
             }
         }
     }
@@ -554,49 +506,8 @@ ColumnLayout {
         id: contextMenu
         background: Rectangle { color: "#222222"; border.color: "#3A3A3A"; radius: 6; implicitWidth: 150 }
         topPadding: 0; bottomPadding: 0
-
-        // ---- 手动排序（第一位） ----
-        MenuItem {
-            visible: songList.length >= 2 && root.supportsManualSort
-            height: songList.length >= 2 && root.supportsManualSort ? implicitHeight : 0
-            text: root.manualSortMode ? "退出排序" : "手动排序"
-            contentItem: Label {
-                text: root.manualSortMode ? "退出排序" : "手动排序"
-                font.family: fontFamily; font.pixelSize: 15; color: "#00d4ff"
-                horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter
-            }
-            background: Rectangle { color: parent.hovered ? "#333333" : "transparent"; radius: 4 }
-            onClicked: {
-                root.toggleSortMode()
-                root.rightClickedTrack = null
-            }
-        }
-        MenuSeparator {
-            visible: songList.length >= 2 && root.supportsManualSort && root.showDefaultContextMenu
-            height: songList.length >= 2 && root.supportsManualSort && root.showDefaultContextMenu ? implicitHeight : 0
-            contentItem: Rectangle { implicitHeight: 1; implicitWidth: 130; color: "#3A3A3A" }
-        }
-        // 不支持排序时的提示按钮
-        MenuItem {
-            visible: songList.length >= 2 && !root.supportsManualSort && root.manualSortDisabledMessage !== ""
-            height: songList.length >= 2 && !root.supportsManualSort && root.manualSortDisabledMessage !== "" ? implicitHeight : 0
-            text: "手动排序"
-            contentItem: Label {
-                text: "手动排序"
-                font.family: fontFamily; font.pixelSize: 15; color: "#666"
-                horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter
-            }
-            background: Rectangle { color: parent.hovered ? "#333333" : "transparent"; radius: 4 }
-            onClicked: {
-                manualSortTipDialog.open()
-                root.rightClickedTrack = null
-            }
-        }
-        MenuSeparator {
-            visible: songList.length >= 2 && !root.supportsManualSort && root.manualSortDisabledMessage !== "" && root.showDefaultContextMenu
-            height: songList.length >= 2 && !root.supportsManualSort && root.manualSortDisabledMessage !== "" && root.showDefaultContextMenu ? implicitHeight : 0
-            contentItem: Rectangle { implicitHeight: 1; implicitWidth: 130; color: "#3A3A3A" }
-        }
+        onOpened: root.contextMenuOpen = true
+        onClosed: root.contextMenuOpen = false
 
         MenuItem {
             id: menuItem
@@ -630,24 +541,6 @@ ColumnLayout {
             }
             onObjectAdded: function(index, object) { contextMenu.insertItem(contextMenu.count, object) }
             onObjectRemoved: function(index, object) { contextMenu.removeItem(object) }
-        }
-    }
-
-    // ---- 排序不支持提示弹窗 ----
-    Dialog {
-        id: manualSortTipDialog
-        parent: root.Window.contentItem
-        modal: true
-        standardButtons: Dialog.Ok
-        width: 320
-        x: (parent.width - width) / 2
-        y: (parent.height - height) / 2
-        background: Rectangle { color: "#222222"; border.color: "#3A3A3A"; radius: 8 }
-        contentItem: Label {
-            text: root.manualSortDisabledMessage
-            font.family: fontFamily; font.pixelSize: 15; color: "#c0c0c0"
-            wrapMode: Text.Wrap; topPadding: 20; bottomPadding: 10
-            leftPadding: 20; rightPadding: 20
         }
     }
 
@@ -725,7 +618,7 @@ ColumnLayout {
 
                 Rectangle {
                     Layout.preferredHeight: 34; Layout.preferredWidth: 76; radius: 6
-                    color: switchConfirmMA.containsMouse ? "#4a6a8a" : "#3a5a7a"
+                    color: switchConfirmMA.containsMouse ? "#5B9EF6" : "#3B82F6"
                     Label { text: "确定"; anchors.centerIn: parent; font.family: fontFamily; font.pixelSize: 13; color: "#ddd" }
                     MouseArea {
                         id: switchConfirmMA; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor

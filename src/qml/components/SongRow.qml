@@ -9,27 +9,27 @@ import QtQuick.Layouts
 Rectangle {
     id: songRow
     width: parent ? parent.width : 200
-    // 动态高度：排序时若作为放置目标，上方展开 58px 占位（50 灰卡 + 8 间距）
+    // 动态高度：拖拽时若作为放置目标，上方展开 58px 占位（50 灰卡 + 8 间距）
     implicitHeight: 50 + dropGap
     height: implicitHeight
     clip: false                      // 允许灰卡超出边界（初始展开时）
 
-    property real dropGap: sortMode && showDropAbove ? 58 : 0
+    property real dropGap: showDropAbove ? 58 : 0
     Behavior on dropGap { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
 
-    property real placeholderH: sortMode && showDropAbove ? 50 : 0
+    property real placeholderH: showDropAbove ? 50 : 0
     Behavior on placeholderH { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
 
-    property real placeholderOpacity: sortMode && showDropAbove ? 0.9 : 0
+    property real placeholderOpacity: showDropAbove ? 0.9 : 0
     Behavior on placeholderOpacity { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
 
     radius: 8
     color: isDragged ? "#444444"
-         : (sortMode ? "#2C2C2C" : (isCurrent ? "#2C2C2C"
-         : (rowMouse.containsMouse ? "#222222" : "#181818")))
+         : (isCurrent ? "#2C2C2C"
+         : (rowMouse.containsMouse ? "#222222" : "#181818"))
     Behavior on color { ColorAnimation { duration: 150 } }
 
-    // ---- 放置占位灰卡（排序模式，目标行上方） ----
+    // ---- 放置占位灰卡（拖拽时，目标行上方） ----
     Rectangle {
         id: gapPlaceholder
         anchors { top: parent.top; left: parent.left; right: parent.right }
@@ -60,14 +60,14 @@ Rectangle {
     required property string fontFamily
     required property real   colCover
     required property real   colTitle
-    required property real   colArtist
     required property real   colAlbum
     required property real   colDuration
-    required property real   colPlay
-    required property bool   sortMode
+    required property real   colIndex
+    required property real   colFav
+    required property real   colMenu
     required property bool   isDragged
     required property bool   showDropAbove
-    required property bool   showDropBelow
+    required property bool   contextMenuOpen
 
     // 拖拽信号：通知 MusicListView 开始/移动/结束拖拽
     signal dragStarted(real mouseY)
@@ -77,64 +77,95 @@ Rectangle {
     signal leftClicked()
     signal rightClicked()
 
-    // 歌曲行内容区域（灰卡下方）
-    RowLayout {
-        id: rowContent
-        anchors { top: gapPlaceholder.bottom; topMargin: sortMode && showDropAbove ? 13 : 5; left: parent.left; leftMargin: 8; right: parent.right; rightMargin: 5; bottom: parent.bottom; bottomMargin: 5 }
-        spacing: 0
+    // ---- 长按拖拽排序（先声明，让 content 在上面接收点击） ----
+    MouseArea {
+        id: rowMouse
+        anchors.fill: parent; hoverEnabled: true
+        cursorShape: Qt.PointingHandCursor
+        acceptedButtons: Qt.LeftButton | Qt.RightButton
 
-        // ---- 拖拽手柄（排序模式可见） ----
-        Item {
-            Layout.preferredWidth: sortMode ? 28 : 0
-            Layout.preferredHeight: parent.height
-            Layout.alignment: Qt.AlignVCenter
-            visible: sortMode
+        property bool _dragTriggered: false
+        property bool _isDragging: false
+        property real _pressY: 0
 
-            Behavior on Layout.preferredWidth { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
-
-            Image {
-                anchors.centerIn: parent
-                source: "qrc:/qt/qml/JustSolo/data/image/drag.png"
-                width: 16; height: 16
-                opacity: dragHandleMA.containsMouse ? 1.0 : 0.5
-                Behavior on opacity { NumberAnimation { duration: 100 } }
-            }
-
-            MouseArea {
-                id: dragHandleMA
-                anchors.fill: parent
-                cursorShape: Qt.SizeVerCursor
-                hoverEnabled: true
-                preventStealing: true
-
-                property bool active: false
-
-                onPressed: function(mouse) {
-                    active = true
-                    var pt = mapToItem(songRow, mouse.x, mouse.y)
-                    songRow.dragStarted(pt.y)
-                }
-                onPositionChanged: function(mouse) {
-                    if (active) {
-                        var pt = mapToItem(songRow, mouse.x, mouse.y)
-                        songRow.dragMoved(pt.y)
-                    }
-                }
-                onReleased: {
-                    if (active) {
-                        active = false
-                        songRow.dragEnded()
-                    }
-                }
-                onCanceled: {
-                    if (active) {
-                        active = false
-                        songRow.dragEnded()
-                    }
-                }
+        Timer {
+            id: longPressTimer
+            interval: 400
+            onTriggered: {
+                rowMouse._dragTriggered = true
+                rowMouse._isDragging = true
+                rowMouse.preventStealing = true
+                var pt = mapToItem(songRow, rowMouse.mouseX, rowMouse.mouseY)
+                songRow.dragStarted(pt.y)
             }
         }
 
+        onPressed: function(mouse) {
+            if (mouse.button === Qt.RightButton) {
+                songRow.rightClicked()
+            } else {
+                _pressY = mouse.y
+                _dragTriggered = false
+                _isDragging = false
+                longPressTimer.restart()
+            }
+        }
+
+        onPositionChanged: function(mouse) {
+            if (_isDragging) {
+                var pt = mapToItem(songRow, mouse.x, mouse.y)
+                songRow.dragMoved(pt.y)
+            } else if (!_dragTriggered && Math.abs(mouse.y - _pressY) > 10) {
+                longPressTimer.stop()
+            }
+        }
+
+        onReleased: function(mouse) {
+            longPressTimer.stop()
+            if (_isDragging) {
+                rowMouse.preventStealing = false
+                songRow.dragEnded()
+                _isDragging = false
+                Qt.callLater(function() { _dragTriggered = false })
+            }
+        }
+
+        onCanceled: {
+            longPressTimer.stop()
+            if (_isDragging) {
+                rowMouse.preventStealing = false
+                songRow.dragEnded()
+            }
+            _isDragging = false
+            _dragTriggered = false
+        }
+
+        onDoubleClicked: function(mouse) {
+            if (mouse.button === Qt.LeftButton && !_dragTriggered) {
+                longPressTimer.stop()
+                _dragTriggered = false
+                songRow.leftClicked()
+            }
+        }
+    }
+
+    // 歌曲行内容区域（灰卡下方，在 rowMouse 之上接收点击）
+    RowLayout {
+        id: rowContent
+        anchors { top: gapPlaceholder.bottom; topMargin: showDropAbove ? 13 : 5; left: parent.left; leftMargin: 8; right: parent.right; rightMargin: 12; bottom: parent.bottom; bottomMargin: 5 }
+        spacing: 0
+
+        // ---- 序号 ----
+        Label {
+            Layout.preferredWidth: songRow.colIndex
+            Layout.alignment: Qt.AlignVCenter
+            text: ("0" + (songRow.index + 1)).slice(-2)
+            font.family: songRow.fontFamily; font.pixelSize: 13; color: "#777777"
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
+        }
+
+        // ---- 封面 ----
         Rectangle {
             Layout.preferredWidth: Math.min(songRow.colCover, 40)
             Layout.preferredHeight: 40
@@ -155,89 +186,149 @@ Rectangle {
             }
         }
 
+        // ---- 标题 + 歌手 + 音质 ----
         Item {
+            id: titleArtistItem
             Layout.fillWidth: true
             Layout.preferredWidth: songRow.colTitle
             Layout.preferredHeight: 40
             Layout.alignment: Qt.AlignVCenter
+            Layout.leftMargin: 8
+            clip: true
+
             Label {
+                id: titleLabel
                 text: model.name || ""
                 font.family: songRow.fontFamily; font.pixelSize: 15
-                font.bold: true; color: "#d4d4d4"
+                font.bold: true; color: "#FFFFFF"
                 elide: Text.ElideRight
                 width: parent.width
                 anchors.top: parent.top; anchors.left: parent.left
             }
-            Rectangle {
-                visible: model.quality && model.quality !== ""
-                width: Math.max(qualityText.contentWidth + 8, 20)
-                height: 16; radius: 3; color: "#D4AF37"
+
+            Row {
+                id: bottomRow
                 anchors.bottom: parent.bottom; anchors.left: parent.left
+                spacing: 3
+
                 Label {
-                    id: qualityText
-                    text: model.quality || ""
-                    font.family: songRow.fontFamily; font.pixelSize: 10; font.bold: true
-                    color: "white"; anchors.centerIn: parent
+                    id: artistBelowLabel
+                    text: model.artist || "未知"
+                    font.family: songRow.fontFamily; font.pixelSize: 13; color: "#777777"
+                    elide: Text.ElideRight
+                    width: Math.min(implicitWidth,
+                        titleArtistItem.width - (qualityBadge.visible ? qualityBadge.width + bottomRow.spacing + 2 : 0) - 2)
+                    visible: model.artist && model.artist !== ""
+                }
+
+                Rectangle {
+                    id: qualityBadge
+                    width: qualityText.contentWidth + 8
+                    height: 18
+                    radius: 3
+                    color: "#80777777"
+                    visible: model.quality && model.quality !== ""
+                    Label {
+                        id: qualityText
+                        text: model.quality || ""
+                        font.family: songRow.fontFamily; font.pixelSize: 10; font.bold: true
+                        color: "#FFFFFF"
+                        anchors.centerIn: parent
+                    }
                 }
             }
         }
 
-        Label {
-            text: model.artist || "未知"
-            font.family: songRow.fontFamily; font.pixelSize: 15; color: "#969696"
-            elide: Text.ElideRight; verticalAlignment: Text.AlignVCenter
-            Layout.fillWidth: true; Layout.fillHeight: true; Layout.preferredWidth: songRow.colArtist
-        }
-
+        // ---- 专辑 ----
         Label {
             text: model.album || ""
-            font.family: songRow.fontFamily; font.pixelSize: 15; color: "#888888"
+            font.family: songRow.fontFamily; font.pixelSize: 15; color: "#777777"
             elide: Text.ElideRight; verticalAlignment: Text.AlignVCenter
             Layout.fillWidth: true; Layout.fillHeight: true; Layout.preferredWidth: songRow.colAlbum
+            Layout.leftMargin: 8
         }
 
-        Label {
-            text: model.durationText || ""
-            font.family: songRow.fontFamily; font.pixelSize: 15; color: "#969696"
-            verticalAlignment: Text.AlignVCenter; horizontalAlignment: Text.AlignRight
-            Layout.fillHeight: true; Layout.preferredWidth: songRow.colDuration
-        }
-
+        // ---- 时长（悬浮时显示播放按钮） ----
         Item {
-            Layout.preferredWidth: songRow.colPlay
-            Layout.preferredHeight: 20; Layout.alignment: Qt.AlignVCenter
-            Image {
-                anchors.centerIn: parent
-                source: "qrc:/qt/qml/JustSolo/data/image/play.png"
-                width: 18; height: 18; opacity: 0.35
-                visible: !songRow.isCurrent
+            Layout.preferredWidth: songRow.colDuration
+            Layout.fillHeight: true
+            Layout.alignment: Qt.AlignVCenter
+
+            Label {
+                text: model.durationText || ""
+                font.family: songRow.fontFamily; font.pixelSize: 15; color: "#777777"
+                verticalAlignment: Text.AlignVCenter; horizontalAlignment: Text.AlignRight
+                width: parent.width; height: parent.height
+                visible: !rowMouse.containsMouse || contextMenuOpen
             }
+
             Image {
-                anchors.centerIn: parent
-                source: "qrc:/qt/qml/JustSolo/data/image/play.png"
-                width: 18; height: 18
-                visible: songRow.isCurrent && !musicManager.isPlaying
-            }
-            Image {
-                anchors.centerIn: parent
-                source: "qrc:/qt/qml/JustSolo/data/image/playing.png"
-                width: 18; height: 18
-                visible: songRow.isCurrent && musicManager.isPlaying
+                anchors.right: parent.right
+                anchors.rightMargin: 6
+                anchors.verticalCenter: parent.verticalCenter
+                source: (songRow.isCurrent && musicManager.isPlaying)
+                    ? "qrc:/qt/qml/JustSolo/data/image/playing.png"
+                    : "qrc:/qt/qml/JustSolo/data/image/play.png"
+                width: 20; height: 20; opacity: 0.7
+                visible: rowMouse.containsMouse && !contextMenuOpen
+
+                MouseArea {
+                    id: playMA
+                    anchors.fill: parent
+                    anchors.margins: -8
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: songRow.leftClicked()
+                }
             }
         }
-    }
 
-    MouseArea {
-        id: rowMouse
-        anchors.fill: parent; hoverEnabled: true
-        cursorShape: sortMode ? Qt.ArrowCursor : Qt.PointingHandCursor
-        enabled: !sortMode
-        acceptedButtons: Qt.LeftButton | Qt.RightButton
-        onClicked: function(mouse) {
-            if (mouse.button === Qt.RightButton)
-                songRow.rightClicked()
-            else
-                songRow.leftClicked()
+        // ---- 收藏按钮（悬浮时显示） ----
+        Item {
+            Layout.preferredWidth: songRow.colFav
+            Layout.fillHeight: true
+            Layout.alignment: Qt.AlignVCenter
+
+            Image {
+                anchors.centerIn: parent
+                source: {
+                    musicManager.favorites;
+                    musicManager.isFavorite(model)
+                        ? "qrc:/qt/qml/JustSolo/data/image/mylike-on.png"
+                        : "qrc:/qt/qml/JustSolo/data/image/mylike-off.png"
+                }
+                width: 20; height: 20; opacity: 0.7
+                visible: rowMouse.containsMouse && !contextMenuOpen
+
+                MouseArea {
+                    id: favMA
+                    anchors.fill: parent
+                    anchors.margins: -4
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: musicManager.toggleFavorite(model)
+                }
+            }
+        }
+
+        // ---- 菜单按钮（永久显示） ----
+        Item {
+            Layout.preferredWidth: songRow.colMenu
+            Layout.fillHeight: true
+            Layout.alignment: Qt.AlignVCenter
+
+            Image {
+                anchors.centerIn: parent
+                source: "qrc:/qt/qml/JustSolo/data/image/menu.png"
+                width: 16; height: 16
+                opacity: 0.6
+
+                MouseArea {
+                    id: menuMA
+                    anchors.fill: parent
+                    anchors.margins: -4
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: songRow.rightClicked()
+                }
+            }
         }
     }
 }

@@ -993,7 +993,7 @@ Window {
                         Layout.preferredWidth: importLibBtnText.contentWidth + 28
                         Layout.preferredHeight: 36
                         radius: 6
-                        color: importLibBtnMA.containsMouse ? "#4a6a8a" : "#3a5a7a"
+                        color: importLibBtnMA.containsMouse ? "#5B9EF6" : "#3B82F6"
                         Behavior on color { ColorAnimation { duration: 120 } }
                         visible: currentMenu === "customPlaylist" && musicManager.library.length > 0
                         Label {
@@ -1534,6 +1534,7 @@ Window {
                                     hoverEnabled: true
                                     cursorShape: Qt.PointingHandCursor
                                     onEntered: modeBtnBar.showModePopup()
+                                    onExited: modeBtnBar.scheduleModeHide()
                                     onClicked: {
                                         musicManager.playMode = index
                                         modePopupBar.close()
@@ -1869,7 +1870,7 @@ Window {
 
                 Rectangle {
                     Layout.preferredHeight: 34; Layout.preferredWidth: 76; radius: 6
-                    color: confirmMA.containsMouse ? "#4a6a8a" : "#3a5a7a"
+                    color: confirmMA.containsMouse ? "#5B9EF6" : "#3B82F6"
                     Label { text: "确定"; anchors.centerIn: parent; font.family: appFont.name; font.pixelSize: 13; color: "#ddd" }
                     MouseArea {
                         id: confirmMA; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
@@ -1958,7 +1959,7 @@ Window {
 
                 Rectangle {
                     Layout.preferredHeight: 34; Layout.preferredWidth: 76; radius: 6
-                    color: renameConfirmMA.containsMouse ? "#4a6a8a" : "#3a5a7a"
+                    color: renameConfirmMA.containsMouse ? "#5B9EF6" : "#3B82F6"
                     Label { text: "确定"; anchors.centerIn: parent; font.family: appFont.name; font.pixelSize: 13; color: "#ddd" }
                     MouseArea {
                         id: renameConfirmMA; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
@@ -2212,7 +2213,7 @@ Window {
                     Rectangle {
                         Layout.preferredHeight: 34; Layout.preferredWidth: 100; radius: 6
                         property bool _canImport: { mainWindow._libSelectedVersion; return mainWindow._countLibSelected() > 0 }
-                        color: _canImport ? (confirmImportMA.containsMouse ? "#4a6a8a" : "#3a5a7a") : "#1E1E1E"
+                        color: _canImport ? (confirmImportMA.containsMouse ? "#5B9EF6" : "#3B82F6") : "#1E1E1E"
                         border.color: _canImport ? "#3A3A3A" : "#3A3A3A"
                         border.width: 1
                         Label {
