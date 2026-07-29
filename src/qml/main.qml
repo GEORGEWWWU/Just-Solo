@@ -1452,77 +1452,6 @@ Window {
         }
 
         // ==========================================
-        // 2. 中间：纯播放控制按钮 (绝对物理居中)
-        // ==========================================
-        RowLayout {
-            Layout.alignment: Qt.AlignCenter
-            spacing: 24  // 间距可以适当微调得稍微舒服一点
-
-            // 上一首
-            Item {
-                Layout.preferredWidth: 22; Layout.preferredHeight: 22
-                Image {
-                    anchors.centerIn: parent
-                    source: "qrc:/qt/qml/JustSolo/data/image/prve.png"
-                    width: 22; height: 22
-                    opacity: 0.8
-                }
-                MouseArea {
-                    anchors.fill: parent; anchors.margins: -8
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: musicManager.previous()
-                }
-            }
-
-            // 播放 / 暂停
-            Rectangle {
-                width: 42; height: 42; radius: 21; color: "#3A3A3A"
-                Behavior on color { ColorAnimation { duration: 120 } }
-                Image {
-                    source: "qrc:/qt/qml/JustSolo/data/image/play.png"
-                    width: 24; height: 24
-                    anchors.centerIn: parent
-                    opacity: musicManager.isPlaying ? 0 : 1
-                    anchors.horizontalCenterOffset: 1
-                    Behavior on opacity { NumberAnimation { duration: 120 } }
-                }
-                Image {
-                    source: "qrc:/qt/qml/JustSolo/data/image/playing.png"
-                    width: 24; height: 24
-                    anchors.centerIn: parent
-                    opacity: musicManager.isPlaying ? 1 : 0
-                    Behavior on opacity { NumberAnimation { duration: 120 } }
-                }
-                MouseArea {
-                    anchors.fill: parent
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: {
-                        if (musicManager.currentIndex >= 0) {
-                            if (musicManager.isPlaying) musicManager.pause()
-                            else musicManager.play()
-                        }
-                    }
-                }
-            }
-
-            // 下一首
-            Item {
-                Layout.preferredWidth: 22; Layout.preferredHeight: 22
-                Image {
-                    anchors.centerIn: parent
-                    source: "qrc:/qt/qml/JustSolo/data/image/next.png"
-                    width: 22; height: 22
-                    opacity: 0.8
-                }
-                MouseArea {
-                    anchors.fill: parent; anchors.margins: -8
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: musicManager.next()
-                }
-            }
-        }
-
-        // ==========================================
         // 3. 右侧：音量控制区
         // ==========================================
         RowLayout {
@@ -1679,6 +1608,81 @@ Window {
                 }
             }
         }
+        }
+
+        // ==========================================
+        // 2. 播放控制按钮 (在 playerBar 中绝对居中)
+        // ==========================================
+        Row {
+            anchors.centerIn: parent
+            spacing: 24
+            z: 5  // 高于左右区域
+
+            // 上一首
+            Item {
+                width: 22; height: 22
+                anchors.verticalCenter: parent.verticalCenter
+                Image {
+                    anchors.centerIn: parent
+                    source: "qrc:/qt/qml/JustSolo/data/image/prve.png"
+                    width: 22; height: 22
+                    opacity: 0.8
+                }
+                MouseArea {
+                    anchors.fill: parent; anchors.margins: -8
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: musicManager.previous()
+                }
+            }
+
+            // 播放 / 暂停
+            Rectangle {
+                width: 42; height: 42; radius: 21; color: "#3A3A3A"
+                anchors.verticalCenter: parent.verticalCenter
+                Behavior on color { ColorAnimation { duration: 120 } }
+                Image {
+                    source: "qrc:/qt/qml/JustSolo/data/image/play.png"
+                    width: 24; height: 24
+                    anchors.centerIn: parent
+                    opacity: musicManager.isPlaying ? 0 : 1
+                    anchors.horizontalCenterOffset: 1
+                    Behavior on opacity { NumberAnimation { duration: 120 } }
+                }
+                Image {
+                    source: "qrc:/qt/qml/JustSolo/data/image/playing.png"
+                    width: 24; height: 24
+                    anchors.centerIn: parent
+                    opacity: musicManager.isPlaying ? 1 : 0
+                    Behavior on opacity { NumberAnimation { duration: 120 } }
+                }
+                MouseArea {
+                    anchors.fill: parent
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: {
+                        if (musicManager.currentIndex >= 0) {
+                            if (musicManager.isPlaying) musicManager.pause()
+                            else musicManager.play()
+                        }
+                    }
+                }
+            }
+
+            // 下一首
+            Item {
+                width: 22; height: 22
+                anchors.verticalCenter: parent.verticalCenter
+                Image {
+                    anchors.centerIn: parent
+                    source: "qrc:/qt/qml/JustSolo/data/image/next.png"
+                    width: 22; height: 22
+                    opacity: 0.8
+                }
+                MouseArea {
+                    anchors.fill: parent; anchors.margins: -8
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: musicManager.next()
+                }
+            }
         }
     }
 
