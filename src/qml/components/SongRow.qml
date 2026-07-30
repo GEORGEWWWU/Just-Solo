@@ -228,7 +228,7 @@ Rectangle {
                     width: qualityText.contentWidth + 8
                     height: 18
                     radius: 3
-                    color: "#777777"
+                    color: "#CDB800"
                     visible: model.quality && model.quality !== ""
                     opacity: 0.8
                     Behavior on opacity { NumberAnimation { duration: 120 } }

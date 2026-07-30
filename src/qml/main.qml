@@ -49,6 +49,9 @@ Window {
     // ---- 播放详情页控制 ----
     property bool showPlayerDetail: false
 
+    // ---- 迷你小窗 ----
+    property var _miniWindow: null
+
     // ---- 自定义播放列表 ----
     property int currentCustomPlaylistIndex: -1
     property int _pendingAddToPlaylistIndex: -1   // 右键添加音乐的待定列表
@@ -1803,6 +1806,39 @@ Window {
         onVisibleChanged: {
             if (!visible)
                 mainWindow.showPlayerDetail = false
+        }
+
+        onEnterMiniMode: {
+            // 关闭详情页
+            playerDetail.close()
+            mainWindow.showPlayerDetail = false
+            // 隐藏主窗口到系统托盘
+            mainWindow.hide()
+            // 创建并显示迷你小窗
+            if (mainWindow._miniWindow) {
+                mainWindow._miniWindow.destroy()
+                mainWindow._miniWindow = null
+            }
+            var obj = miniPlayerComponent.createObject(null, {fontFamily: appFont.name})
+            mainWindow._miniWindow = obj
+            obj.exitMiniMode.connect(function() {
+                if (mainWindow._miniWindow) {
+                    mainWindow._miniWindow.destroy()
+                    mainWindow._miniWindow = null
+                }
+                mainWindow.show()
+            })
+            obj.show()
+        }
+    }
+
+    // ============================================================
+    // 迷你小窗组件（动态创建/销毁）
+    // ============================================================
+    Component {
+        id: miniPlayerComponent
+        MiniPlayer {
+            fontFamily: appFont.name
         }
     }
 

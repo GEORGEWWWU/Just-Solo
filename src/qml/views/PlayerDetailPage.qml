@@ -12,6 +12,9 @@ Item {
     property int _lastScroll: -1
     property int _pastIdx: -1  // 已播放到的歌词行索引（前进时增大，回退时重置）
 
+    // 进入迷你小窗模式信号
+    signal enterMiniMode()
+
     // 页面滑动偏移量（初始推至视口外，动画直接修改此值，避免绑定被 QML 重求值）
     property real _slideOffset: root.height
 
@@ -154,8 +157,32 @@ Item {
         color: "#1E1E1E" 
     }
 
+    // 迷你小窗按钮
+    Rectangle {
+        anchors.top: parent.top; anchors.right: closeBtn.left
+        anchors.topMargin: 14; anchors.rightMargin: 8
+        width: 36; height: 36; radius: 18
+        color: miniEnterMA.containsMouse ? "#33ffffff" : "transparent"
+
+        Image {
+            anchors.centerIn: parent
+            width: 20; height: 20
+            source: "qrc:/qt/qml/JustSolo/data/image/mini-enter.png"
+            fillMode: Image.PreserveAspectFit
+        }
+
+        MouseArea {
+            id: miniEnterMA
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: root.enterMiniMode()
+        }
+    }
+
     // 关闭按钮
     Rectangle {
+        id: closeBtn
         anchors.top: parent.top; anchors.right: parent.right
         anchors.topMargin: 14; anchors.rightMargin: 22
         width: 36; height: 36; radius: 18

@@ -3,8 +3,8 @@ project(JustSolo VERSION 0.1.0 LANGUAGES CXX)
 
 # ---- 软件版本号 ----
 set(APP_VERSION_MAJOR 1)
-set(APP_VERSION_MINOR 0)
-set(APP_VERSION_PATCH 1)
+set(APP_VERSION_MINOR 1)
+set(APP_VERSION_PATCH 0)
 set(APP_VERSION_PRE   0)   # 0=正式版, >0=beta.N
 
 # 格式化显示版本: vX.Y.Z 或 vX.Y.Z-beta.N
@@ -33,6 +33,8 @@ set(CMAKE_AUTOMOC ON)
 
 # 避免因缺少 Vulkan SDK 导致 CMake 配置卡住
 set(CMAKE_DISABLE_FIND_PACKAGE_Vulkan TRUE)
+# Qt 6.8+ Quick 模块内部对 WrapVulkanHeaders 的检查（不归 CMAKE_DISABLE_FIND_PACKAGE 管）
+set(QT_QUICK_NO_VULKAN_CHECK ON CACHE BOOL "" FORCE)
 
 # 查找 Qt 6.8.3
 find_package(Qt6 6.8.3 REQUIRED COMPONENTS
@@ -56,6 +58,8 @@ qt_policy(SET QTP0004 NEW)
 # cmark-gfm 的 cmake_minimum_required 版本较旧，新版 CMake 需设置此策略避免报错
 set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
 include(FetchContent)
+# 使用本地已下载的源码，避免每次从 GitHub 克隆（国内网络慢）
+set(FETCHCONTENT_SOURCE_DIR_CMARK-GFM "${CMAKE_SOURCE_DIR}/third_party/cmark-gfm-0.29.0.gfm.13" CACHE PATH "Local cmark-gfm source")
 FetchContent_Declare(cmark-gfm
     GIT_REPOSITORY https://github.com/github/cmark-gfm.git
     GIT_TAG 0.29.0.gfm.13
@@ -64,6 +68,12 @@ set(CMARK_THREADING OFF CACHE BOOL "" FORCE)
 set(CMARK_SHARED OFF CACHE BOOL "" FORCE)
 set(CMARK_TESTS OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(cmark-gfm)
+
+# 抑制 cmark-gfm 源码的 C4819 警告（UTF-8 字符在 GBK 代码页下触发）
+if(MSVC)
+    target_compile_options(libcmark-gfm_static PRIVATE /wd4819)
+    target_compile_options(libcmark-gfm-extensions_static PRIVATE /wd4819)
+endif()
 
 # 可执行文件
 qt_add_executable(JustSolo WIN32
@@ -99,6 +109,7 @@ qt_add_qml_module(JustSolo
         src/qml/views/HistoryPage.qml
         src/qml/views/SettingsPage.qml
         src/qml/views/PlayerDetailPage.qml
+        src/qml/views/MiniPlayer.qml
     RESOURCES
         data/image/logo.png
         data/image/logo2.png
@@ -126,6 +137,8 @@ qt_add_qml_module(JustSolo
         data/image/back.png
         data/image/prve.png
         data/image/next.png
+        data/image/mini-enter.png
+        data/image/mini-exit.png
 )
 
 # 链接 Qt 库
