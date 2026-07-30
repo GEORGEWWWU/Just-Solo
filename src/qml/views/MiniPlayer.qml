@@ -9,11 +9,11 @@ import QtQuick.Effects
 
 Window {
     id: miniWindow
-    width: 300
+    width: 350
     height: 100
-    minimumWidth: 300
+    minimumWidth: 350
     minimumHeight: 100
-    maximumWidth: 300
+    maximumWidth: 350
     maximumHeight: 100
     flags: Qt.Window | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint
     color: "transparent"
@@ -62,17 +62,16 @@ Window {
         anchors.margins: 6
         spacing: 8
 
-        // ---- 左侧：封面 ----
+        // ---- 左侧：封面（上下顶格） ----
         Rectangle {
-            Layout.preferredWidth: 76
-            Layout.preferredHeight: 76
-            Layout.alignment: Qt.AlignVCenter
+            Layout.preferredWidth: 88
+            Layout.fillHeight: true
             radius: 6
             color: "#3A3A3A"
 
             Image {
                 id: coverImg
-                anchors.fill: parent; anchors.margins: 1
+                anchors.fill: parent
                 source: (typeof musicManager !== "undefined" && musicManager) ? (musicManager.currentCover || "") : ""
                 fillMode: Image.PreserveAspectCrop
                 asynchronous: true
@@ -93,32 +92,31 @@ Window {
             Label {
                 anchors.centerIn: parent
                 text: "\u266B"
-                font.family: _font; font.pixelSize: 28; color: "#666"
+                font.family: _font; font.pixelSize: 32; color: "#666"
                 visible: (typeof musicManager === "undefined" || !musicManager || !musicManager.currentCover)
             }
         }
 
-        // ---- 右侧：标题 + 进度条 + 控制按钮 ----
+        // ---- 右侧：标题 + 歌手 + 进度条 + 控制按钮 ----
         ColumnLayout {
             Layout.fillWidth: true
             Layout.fillHeight: true
             Layout.leftMargin: 2
             spacing: 2
 
-            // ---- 歌曲标题（居中、放大） ----
+            // ---- 歌曲标题（居中） ----
             Item {
                 Layout.fillWidth: true
-                Layout.fillHeight: true
+                Layout.preferredHeight: 22
                 Layout.topMargin: 2
                 clip: true
-                Layout.minimumHeight: 22
 
                 property bool needsScroll: titleText.contentWidth > width
 
                 Text {
                     id: titleText
                     text: (typeof musicManager !== "undefined" && musicManager) ? (musicManager.currentTitle || "未在播放") : "未在播放"
-                    font.family: _font; font.pixelSize: 20; font.bold: true; color: "#f0f0f0"
+                    font.family: _font; font.pixelSize: 18; font.bold: true; color: "#f0f0f0"
                     y: (parent.height - contentHeight) / 2
                     x: parent.needsScroll ? parent.width : (parent.width - contentWidth) / 2
 
@@ -137,11 +135,27 @@ Window {
                 }
             }
 
+            // ---- 歌手（居中） ----
+            Label {
+                text: {
+                    if (typeof musicManager === "undefined" || !musicManager) return ""
+                    var a = (musicManager.currentArtist || "").replace(/[/;｜|]+/g, "、")
+                    return a || ""
+                }
+                font.family: _font; font.pixelSize: 11; color: "#999"
+                Layout.fillWidth: true
+                Layout.preferredHeight: 14
+                horizontalAlignment: Text.AlignHCenter
+                elide: Text.ElideRight
+                visible: text !== ""
+            }
+
             // ---- 进度条 ----
             Item {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 6
-                Layout.topMargin: 1
+                Layout.topMargin: 4
+                Layout.bottomMargin: 2
 
                 Rectangle {
                     anchors.verticalCenter: parent.verticalCenter
@@ -170,6 +184,8 @@ Window {
                     onPositionChanged: function(m) { if (pressed) seek(m.x) }
                 }
             }
+
+            Item { Layout.fillHeight: true }
 
             // ---- 底部控制栏（三大按钮居中） ----
             RowLayout {

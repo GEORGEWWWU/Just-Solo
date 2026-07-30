@@ -51,6 +51,7 @@ Window {
 
     // ---- 迷你小窗 ----
     property var _miniWindow: null
+    property bool _pendingMiniExit: false
 
     // ---- 自定义播放列表 ----
     property int currentCustomPlaylistIndex: -1
@@ -1217,11 +1218,17 @@ Window {
         }
     }
 
-    // 从托盘恢复时，如果有迷你小窗则销毁并打开播放详情页
+    // 从托盘恢复 / 小窗退出时，播放主窗口出现动画并打开播放详情页
     onVisibleChanged: {
-        if (visible && _miniWindow) {
+        if (!visible) return
+        // 小窗退出：先销毁小窗再开详情页
+        if (_miniWindow) {
             _miniWindow.destroy()
             _miniWindow = null
+        }
+        if (_pendingMiniExit) {
+            _pendingMiniExit = false
+            // 小窗退出 → 用系统动画拉起主窗口后打开详情页
             showPlayerDetail = true
             playerDetail.reopen()
         }
@@ -1819,26 +1826,7 @@ Window {
         }
 
         onEnterMiniMode: {
-            // 关闭详情页
-            playerDetail.close()
-            mainWindow.showPlayerDetail = false
-            // 隐藏主窗口到系统托盘
-            mainWindow.hide()
-            // 创建并显示迷你小窗
-            if (mainWindow._miniWindow) {
-                mainWindow._miniWindow.destroy()
-                mainWindow._miniWindow = null
-            }
-            var obj = miniPlayerComponent.createObject(null, {fontFamily: appFont.name})
-            mainWindow._miniWindow = obj
-            obj.exitMiniMode.connect(function() {
-                if (mainWindow._miniWindow) {
-                    mainWindow._miniWindow.destroy()
-                    mainWindow._miniWindow = null
-                }
-                mainWindow.show()
-            })
-            obj.show()
+            mainWindow._enterMiniMode()
         }
     }
 
@@ -2350,6 +2338,30 @@ Window {
     onShowPlayerDetailChanged: {
         if (showPlayerDetail)
             playerDetail.visible = true
+    }
+
+    // ---- 迷你小窗：进入迷你模式（从详情页按钮或托盘菜单调用） ----
+    function _enterMiniMode() {
+        if (typeof musicManager === "undefined" || !musicManager || musicManager.currentIndex < 0)
+            return
+        playerDetail.close()
+        mainWindow.showPlayerDetail = false
+        mainWindow.hide()
+        if (mainWindow._miniWindow) {
+            mainWindow._miniWindow.destroy()
+            mainWindow._miniWindow = null
+        }
+        var obj = miniPlayerComponent.createObject(null, {fontFamily: appFont.name})
+        mainWindow._miniWindow = obj
+        obj.exitMiniMode.connect(function() {
+            if (mainWindow._miniWindow) {
+                mainWindow._miniWindow.destroy()
+                mainWindow._miniWindow = null
+            }
+            mainWindow._pendingMiniExit = true
+            mainWindow.show()
+        })
+        obj.show()
     }
 
     // ============================================================

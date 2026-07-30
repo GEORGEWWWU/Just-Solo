@@ -1,5 +1,6 @@
 #include <QApplication>
 #include <QIcon>
+#include <QMetaObject>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
 #include <QQuickStyle>
@@ -97,21 +98,66 @@ static void setupSystemTray(QQuickWindow *window, MusicManager *mgr) {
 
     QMenu *menu = new QMenu();
 
+    // ---- 播放控制 ----
+    QAction *prevAction = menu->addAction("上一曲");
+    QAction *playPauseAction = menu->addAction(mgr->isPlaying() ? "暂停" : "播放");
+    QAction *nextAction = menu->addAction("下一曲");
+    menu->addSeparator();
+
     QAction *showAction = menu->addAction("显示主窗口");
+    QAction *miniAction = menu->addAction("迷你模式");
     QAction *quitAction = menu->addAction("退出");
 
     tray->setContextMenu(menu);
 
-    // 显示/恢复窗口
+    // 更新暂停/播放按钮文字
+    QObject::connect(mgr, &MusicManager::playbackStateChanged, [playPauseAction, mgr]() {
+        playPauseAction->setText(mgr->isPlaying() ? "暂停" : "播放");
+    });
+
+    // 上一曲
+    QObject::connect(prevAction, &QAction::triggered, [mgr]() {
+        mgr->previous();
+    });
+
+    // 暂停/播放
+    QObject::connect(playPauseAction, &QAction::triggered, [mgr]() {
+        if (mgr->currentIndex() < 0) return;
+        if (mgr->isPlaying()) mgr->pause();
+        else mgr->play();
+    });
+
+    // 下一曲
+    QObject::connect(nextAction, &QAction::triggered, [mgr]() {
+        mgr->next();
+    });
+
+    // 显示/恢复窗口（小窗模式下自动展开详情页）
     QObject::connect(showAction, &QAction::triggered, [window]() {
+        QVariant miniWin = window->property("_miniWindow");
+        if (miniWin.isValid() && !miniWin.isNull()) {
+            window->setProperty("_pendingMiniExit", true);
+        }
         window->show();
         window->raise();
         window->requestActivate();
     });
 
-    // 左键/双击托盘图标也恢复窗口
+    // 迷你模式（小窗未激活时进入）
+    QObject::connect(miniAction, &QAction::triggered, [window]() {
+        QVariant miniWin = window->property("_miniWindow");
+        if (!miniWin.isValid() || miniWin.isNull()) {
+            QMetaObject::invokeMethod(window, "_enterMiniMode");
+        }
+    });
+
+    // 左键/双击托盘图标也恢复窗口（小窗模式同上去详情页）
     QObject::connect(tray, &QSystemTrayIcon::activated, [window](QSystemTrayIcon::ActivationReason reason) {
         if (reason == QSystemTrayIcon::DoubleClick || reason == QSystemTrayIcon::Trigger) {
+            QVariant miniWin = window->property("_miniWindow");
+            if (miniWin.isValid() && !miniWin.isNull()) {
+                window->setProperty("_pendingMiniExit", true);
+            }
             window->show();
             window->raise();
             window->requestActivate();
