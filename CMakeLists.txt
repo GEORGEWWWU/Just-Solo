@@ -4,7 +4,7 @@ project(JustSolo VERSION 0.1.0 LANGUAGES CXX)
 # ---- 软件版本号 ----
 set(APP_VERSION_MAJOR 1)
 set(APP_VERSION_MINOR 0)
-set(APP_VERSION_PATCH 0)
+set(APP_VERSION_PATCH 1)
 set(APP_VERSION_PRE   0)   # 0=正式版, >0=beta.N
 
 # 格式化显示版本: vX.Y.Z 或 vX.Y.Z-beta.N
@@ -31,6 +31,9 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_AUTOMOC ON)
 
+# 避免因缺少 Vulkan SDK 导致 CMake 配置卡住
+set(CMAKE_DISABLE_FIND_PACKAGE_Vulkan TRUE)
+
 # 查找 Qt 6.8.3
 find_package(Qt6 6.8.3 REQUIRED COMPONENTS
     Core
@@ -49,6 +52,19 @@ qt_standard_project_setup()
 qt_policy(SET QTP0001 NEW)
 qt_policy(SET QTP0004 NEW)
 
+# ---- cmark-gfm（Markdown → HTML 渲染）----
+# cmark-gfm 的 cmake_minimum_required 版本较旧，新版 CMake 需设置此策略避免报错
+set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
+include(FetchContent)
+FetchContent_Declare(cmark-gfm
+    GIT_REPOSITORY https://github.com/github/cmark-gfm.git
+    GIT_TAG 0.29.0.gfm.13
+)
+set(CMARK_THREADING OFF CACHE BOOL "" FORCE)
+set(CMARK_SHARED OFF CACHE BOOL "" FORCE)
+set(CMARK_TESTS OFF CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(cmark-gfm)
+
 # 可执行文件
 qt_add_executable(JustSolo WIN32
     src/main.cpp
@@ -58,6 +74,8 @@ qt_add_executable(JustSolo WIN32
     src/core/SMTCManager.cpp
     src/core/HotkeyManager.cpp
     src/core/UpdateChecker.cpp
+    src/core/MarkdownHelper.h
+    src/core/MarkdownHelper.cpp
     src/core/CurlRequest.h
     src/core/CurlRequest.cpp
     src/services/LyricServer.cpp
@@ -120,6 +138,14 @@ target_link_libraries(JustSolo PRIVATE
     Qt6::Network
     Qt6::WebSockets
     Qt6::Widgets
+    libcmark-gfm_static
+    libcmark-gfm-extensions_static
+)
+target_include_directories(JustSolo PRIVATE
+    "${cmark-gfm_SOURCE_DIR}/src"
+    "${cmark-gfm_BINARY_DIR}/src"
+    "${cmark-gfm_SOURCE_DIR}/extensions"
+    "${cmark-gfm_BINARY_DIR}/extensions"
 )
 
 # Windows: DWM API + runtimeobject (SMTC) + shell32 (AUMID)

@@ -1,5 +1,6 @@
 #include "UpdateChecker.h"
 #include "CurlRequest.h"
+#include "MarkdownHelper.h"
 
 #include <QJsonDocument>
 #include <QJsonArray>
@@ -54,6 +55,7 @@ void UpdateChecker::loadCachedInfo()
     QJsonObject root = doc.object();
     m_latestVersion = root.value("latestVersion").toString();
     m_changelog = root.value("changelog").toString();
+    m_changelogHtml = MarkdownHelper::toHtml(m_changelog);
     m_releaseDate = root.value("releaseDate").toString();
     m_downloadUrl = root.value("downloadUrl").toString();
     m_githubDownloadUrl = root.value("githubDownloadUrl").toString();
@@ -81,6 +83,7 @@ void UpdateChecker::clearInfo()
 {
     m_latestVersion.clear();
     m_changelog.clear();
+    m_changelogHtml.clear();
     m_releaseDate.clear();
     m_downloadUrl.clear();
     m_githubDownloadUrl.clear();
@@ -130,6 +133,7 @@ void UpdateChecker::checkForUpdates()
         QJsonObject root = doc.object();
         m_latestVersion = root.value("version").toString();
         m_changelog = root.value("changelog").toString().trimmed();
+        m_changelogHtml = MarkdownHelper::toHtml(m_changelog);
         m_releaseDate = root.value("updated_at").toString();
 
         // 提取下载地址（新版 API 直接返回完整 URL）

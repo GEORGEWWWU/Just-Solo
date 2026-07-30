@@ -12,6 +12,7 @@ class UpdateChecker : public QObject
     Q_OBJECT
     Q_PROPERTY(QString latestVersion READ latestVersion NOTIFY infoChanged)
     Q_PROPERTY(QString changelog READ changelog NOTIFY infoChanged)
+    Q_PROPERTY(QString changelogHtml READ changelogHtml NOTIFY infoChanged)
     Q_PROPERTY(QString releaseDate READ releaseDate NOTIFY infoChanged)
     Q_PROPERTY(QString downloadUrl READ downloadUrl NOTIFY infoChanged)
     Q_PROPERTY(QString githubDownloadUrl READ githubDownloadUrl NOTIFY infoChanged)
@@ -27,6 +28,7 @@ public:
 
     QString latestVersion() const { return m_latestVersion; }
     QString changelog() const { return m_changelog; }
+    QString changelogHtml() const { return m_changelogHtml; }
     QString releaseDate() const { return m_releaseDate; }
     QString downloadUrl() const { return m_downloadUrl; }
     QString githubDownloadUrl() const;
@@ -62,6 +64,7 @@ private:
     QString m_currentVersion;
     QString m_latestVersion;
     QString m_changelog;
+    QString m_changelogHtml;
     QString m_releaseDate;
     QString m_downloadUrl;        // Gitcode 国内下载（默认）
     QString m_githubDownloadUrl;  // GitHub 国际下载
