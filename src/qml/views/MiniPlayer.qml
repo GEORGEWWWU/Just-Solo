@@ -15,7 +15,7 @@ Window {
     minimumHeight: 100
     maximumWidth: 300
     maximumHeight: 100
-    flags: Qt.Window | Qt.FramelessWindowHint
+    flags: Qt.Window | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint
     color: "transparent"
     title: "Just Solo"
 
@@ -44,14 +44,12 @@ Window {
     }
 
     // ============================================================
-    // 窗口拖动区域（覆盖顶部区域）
+    // 全窗口拖动（置于底层，按钮等交互元素不受影响）
     // ============================================================
     MouseArea {
         id: dragArea
-        anchors.top: parent.top
-        anchors.left: parent.left
-        anchors.right: parent.right
-        height: 30
+        anchors.fill: parent
+        z: -1
         cursorShape: Qt.OpenHandCursor
         onPressed: { miniWindow.startSystemMove() }
     }
@@ -100,26 +98,28 @@ Window {
             }
         }
 
-        // ---- 右侧：标题 + 歌手/专辑 + 进度条 + 控制按钮 ----
+        // ---- 右侧：标题 + 进度条 + 控制按钮 ----
         ColumnLayout {
             Layout.fillWidth: true
             Layout.fillHeight: true
             Layout.leftMargin: 2
             spacing: 2
 
-            // ---- 歌曲标题（滚动显示） ----
+            // ---- 歌曲标题（居中、放大） ----
             Item {
                 Layout.fillWidth: true
-                Layout.preferredHeight: 20
-                Layout.topMargin: 1
+                Layout.fillHeight: true
+                Layout.topMargin: 2
                 clip: true
+                Layout.minimumHeight: 22
 
                 property bool needsScroll: titleText.contentWidth > width
 
                 Text {
                     id: titleText
                     text: (typeof musicManager !== "undefined" && musicManager) ? (musicManager.currentTitle || "未在播放") : "未在播放"
-                    font.family: _font; font.pixelSize: 16; font.bold: true; color: "#f0f0f0"
+                    font.family: _font; font.pixelSize: 20; font.bold: true; color: "#f0f0f0"
+                    y: (parent.height - contentHeight) / 2
                     x: parent.needsScroll ? parent.width : (parent.width - contentWidth) / 2
 
                     SequentialAnimation on x {
@@ -134,33 +134,6 @@ Window {
                         PauseAnimation { duration: 600 }
                         PropertyAnimation { property: "x"; to: titleText.parent ? titleText.parent.width : 0; duration: 0 }
                     }
-                }
-            }
-
-            // ---- 歌手（左）+ 专辑（右） ----
-            Row {
-                Layout.fillWidth: true
-                Layout.preferredHeight: 14
-                spacing: 8
-
-                Label {
-                    text: {
-                        if (typeof musicManager === "undefined" || !musicManager) return ""
-                        var a = (musicManager.currentArtist || "").replace(/[/;｜|]+/g, "、")
-                        return a || ""
-                    }
-                    font.family: _font; font.pixelSize: 12; color: "#999"
-                    elide: Text.ElideRight
-                    width: parent ? (parent.width * 0.5 - 4) : 0
-                }
-
-                Label {
-                    text: (typeof musicManager !== "undefined" && musicManager) ? (musicManager.currentAlbum || "") : ""
-                    font.family: _font; font.pixelSize: 12; color: "#777"
-                    elide: Text.ElideRight
-                    width: parent ? (parent.width * 0.5 - 4) : 0
-                    horizontalAlignment: Text.AlignRight
-                    visible: text !== ""
                 }
             }
 

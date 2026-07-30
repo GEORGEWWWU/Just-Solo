@@ -1217,6 +1217,16 @@ Window {
         }
     }
 
+    // 从托盘恢复时，如果有迷你小窗则销毁并打开播放详情页
+    onVisibleChanged: {
+        if (visible && _miniWindow) {
+            _miniWindow.destroy()
+            _miniWindow = null
+            showPlayerDetail = true
+            playerDetail.reopen()
+        }
+    }
+
     // ============================================================
     // 底部播放控制栏
     // ============================================================
