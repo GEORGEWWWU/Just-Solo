@@ -1,4 +1,4 @@
-# Just Solo
+<h1 align="center">Just Solo</h1>
 <div align="center">
 
 <img src="./data/image/logo.png" alt="Just Solo" width="200" />
@@ -105,11 +105,18 @@ Just Solo 是一款追求简洁、高性能的本地音乐播放器。采用 C++
 - **单实例检测**：基于 `QLocalServer`，防止重复启动，托盘隐藏后点快捷方式恢复窗口
 - **系统原生标题栏**：DWM 深色自定义，Win11 三色定制（背景/文字/边框），Win10 强制深色主题
 
+### 迷你播放器（迷你小窗）
+- 全新独立小窗模式，始终置顶显示
+- 展示专辑封面、歌曲标题（居中放大）及歌手信息
+- 支持播放/暂停控制
+- 从播放详情页或系统托盘菜单进入
+- 一键还原至主窗口
+
 ### 播放详情页
 - 点击封面打开，底部滑入滑出动画，背景深色半透明遮罩
 - 左侧：圆形封面 + 歌名（超长 marquee 滚动）+ 歌手 + 专辑
 - 右侧：逐行高亮歌词（已播/当前/未播三色）
-- 底部：可拖动进度条 + 播放模式切换按钮
+- 底部：可拖动进度条 + 播放模式切换按钮 + 迷你小窗进入按钮
 - 底部滑入动画 + 透明度过渡开关动画，透明度 30%~100% 可调
 
 ### 设置页面
@@ -126,6 +133,7 @@ Just Solo 是一款追求简洁、高性能的本地音乐播放器。采用 C++
 - **UI**: Qt Quick (QML), Qt QuickControls2, Qt QuickLayouts
 - **后端**: C++17, Qt 6.8.3
 - **网络**: libcurl (OTA 在线更新)
+- **Markdown**: cmark-gfm (Markdown → 富文本 HTML 转换)
 - **构建**: CMake 3.16+, Visual Studio 2026 (MSVC)
 - **字体**: HarmonyOS Sans SC
 
@@ -160,6 +168,7 @@ Just-Solo/
 │   │   ├── HotkeyManager.h/cpp     # 全局快捷键管理器
 │   │   ├── CurlRequest.h/cpp       # libcurl 网络请求封装
 │   │   ├── UpdateChecker.h/cpp     # OTA 在线更新检查
+│   │   ├── MarkdownHelper.h/cpp    # Markdown → 富文本 HTML 转换（基于 cmark-gfm）
 │   │   └── miniaudio.h             # miniaudio 单头文件库
 │   ├── services/
 │   │   ├── LyricServer.h/cpp       # LyricServer WebSocket 歌词推送服务
@@ -176,20 +185,23 @@ Just-Solo/
 │           ├── FavoritePage.qml    # 收藏页
 │           ├── HistoryPage.qml     # 历史页
 │           ├── SettingsPage.qml    # 设置页
-│           └── PlayerDetailPage.qml# 播放详情页
+│           ├── PlayerDetailPage.qml# 播放详情页
+│           └── MiniPlayer.qml      # 迷你播放器（迷你小窗）
 ├── data/
 │   ├── image/
 │   │   ├── logo.ico / logo.png / logo2.png  # 程序图标
 │   │   ├── home.png / mylike.png / mylike-on.png / mylike-off.png / history.png / PlayList.png / AddToPlayList.png # 导航与操作图标
 │   │   ├── creatList.png                    # 自建列表图标
 │   │   ├── setting.png / menu.png / drag.png # 设置、菜单、拖放提示图标
+│   │   ├── mini-enter.png / mini-exit.png # 迷你播放器相关图标
 │   │   ├── play.png / playing.png / next.png / prve.png / back.png / volume-logo.png # 播放控制与音量图标
 │   │   ├── mode_sequential.png / mode_loop.png / mode_single.png / mode_shuffle.png / mode_stop.png # 播放模式图标
 │   │   └── photo-1.png / backgroud.png       # 展示图与背景图
 │   └── font/
 │       └── HarmonyOS_Sans_SC_Regular.ttf    # 字体文件（HarmonyOS Sans SC）
 ├── third_party/
-│   └── curl/                   # libcurl 依赖（bin/include/lib）
+│   ├── curl/                   # libcurl 依赖（bin/include/lib）
+│   └── cmark-gfm-0.29.0.gfm.13/ # cmark-gfm 源码（Markdown 解析）
 ├── resources/
 │   └── app.rc                  # Windows 资源文件（嵌入 ico）
 └── release/                    # 打包输出目录（由 package.ps1 生成）
