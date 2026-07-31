@@ -1436,7 +1436,7 @@ QString MusicManager::extractCoverColor(const QString &coverUrl) {
             qreal s = maxC > 0 ? (maxC - minC) / qreal(maxC) : 0.0;
 
             // 跳过过暗（接近黑）/ 过亮（接近白）/ 过灰（饱和度低）
-            if (v < 0.2 || v > 0.95 || s < 0.15) continue;
+            if (v < 0.2 || v > 0.85 || s < 0.25) continue;
 
             int ri = r >> 4;  // r / 16
             int gi = g >> 4;
@@ -1466,6 +1466,16 @@ QString MusicManager::extractCoverColor(const QString &coverUrl) {
     int r = int(rSum[bestIdx] / quint64(bestCount));
     int g = int(gSum[bestIdx] / quint64(bestCount));
     int b = int(bSum[bestIdx] / quint64(bestCount));
+
+    // 对偏亮的颜色做压暗，避免作为背景时发白（限制最大通道值 ≤ 140，即 V ≤ 0.55）
+    int maxC = r > g ? (r > b ? r : b) : (g > b ? g : b);
+    const int MAX_V = 140;
+    if (maxC > MAX_V) {
+        qreal scale = qreal(MAX_V) / maxC;
+        r = int(r * scale);
+        g = int(g * scale);
+        b = int(b * scale);
+    }
 
     return QString("#%1%2%3")
         .arg(r, 2, 16, QChar('0'))

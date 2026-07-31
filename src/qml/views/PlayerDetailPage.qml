@@ -283,10 +283,19 @@ Item {
         color: miniEnterMA.containsMouse ? "#33ffffff" : "transparent"
 
         Image {
-            anchors.centerIn: parent
+            id: miniEnterIcon
+            visible: false
             width: 20; height: 20
             source: "qrc:/qt/qml/JustSolo/data/image/mini-enter.png"
             fillMode: Image.PreserveAspectFit
+        }
+        MultiEffect {
+            anchors.centerIn: parent
+            width: miniEnterIcon.width; height: miniEnterIcon.height
+            source: miniEnterIcon
+            // 染色为白色 #FFFFFF，与关闭按钮统一
+            colorizationColor: "#FFFFFF"
+            colorization: 1.0
         }
 
         MouseArea {
@@ -309,9 +318,7 @@ Item {
         Image {
             anchors.centerIn: parent
             width: 18; height: 18
-            source: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='" 
-                    + (closeMA.containsMouse ? "%23cccccc" : "%23777777") 
-                    + "' stroke-width='2.5' stroke-linecap='round'><path d='M18 6L6 18M6 6l12 12'/></svg>"
+            source: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2.5' stroke-linecap='round'><path d='M18 6L6 18M6 6l12 12'/></svg>"
             fillMode: Image.PreserveAspectFit
         }
 
@@ -419,7 +426,7 @@ Item {
                     var a = (musicManager.currentArtist || "").replace(/[/;｜|]+/g, "、")
                     return a ? ("歌手：" + a) : "歌手：未知"
                 }
-                font.family: root.fontFamily; font.pixelSize: 18; color: "#999"
+                font.family: root.fontFamily; font.pixelSize: 18; color: "#f0f0f0"
                 elide: Text.ElideRight; horizontalAlignment: Text.AlignHCenter
             }
 
@@ -432,7 +439,7 @@ Item {
                     var a = musicManager.currentAlbum || ""
                     return a ? ("专辑：" + a) : ""
                 }
-                font.family: root.fontFamily; font.pixelSize: 15; color: "#bbb"
+                font.family: root.fontFamily; font.pixelSize: 15; color: "#f0f0f0"
                 elide: Text.ElideRight; horizontalAlignment: Text.AlignHCenter
                 visible: text !== ""
             }
