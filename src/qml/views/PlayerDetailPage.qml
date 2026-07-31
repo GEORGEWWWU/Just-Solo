@@ -71,10 +71,18 @@ Item {
     function centerOnIndex(idx, animate) {
         if (lyricsView.count === 0 || idx < 0) return
         lyricScrollAnim.stop()
-        var from = lyricsView.contentY
         var item = lyricsView.itemAtIndex(idx)
-        if (!item) return
+        if (!item) {
+            // delegate 还未实例化（从后台恢复时 ListView 刚重建），
+            // 用粗略定位把目标行拉进视口，并延迟一帧重试精确定位
+            lyricsView.positionViewAtIndex(idx, ListView.Center)
+            _centerRetryTimer.idx = idx
+            _centerRetryTimer.animate = animate
+            _centerRetryTimer.restart()
+            return
+        }
         // 目标行顶部在视口内的实际位置 → 需要滚动的偏移 = 视口中心 - 行中心
+        var from = lyricsView.contentY
         var topInView = item.mapToItem(lyricsView, 0, 0).y
         var to = lyricsView.contentY + topInView - (lyricsView.height - item.height) / 2
         // 边界钳制：允许越过首尾边界（借用 topMargin/bottomMargin 空间），
@@ -86,6 +94,28 @@ Item {
             lyricScrollAnim.from = from
             lyricScrollAnim.to = to
             lyricScrollAnim.start()
+        } else if (animate === false) {
+            // 直接落位（进入页面 / 快速 seek / 从后台恢复）
+            // 原实现缺少此分支，导致从后台恢复时歌词不对齐
+            lyricsView.contentY = to
+        }
+    }
+
+    // delegate 未实例化时的精确定位重试定时器（配合 centerOnIndex 使用）
+    Timer {
+        id: _centerRetryTimer
+        interval: 60
+        property int idx: -1
+        property bool animate: false
+        onTriggered: {
+            if (idx < 0 || lyricsView.count === 0) return
+            if (lyricsView.itemAtIndex(idx)) {
+                var savedIdx = idx
+                var savedAnimate = animate
+                idx = -1  // 清除标记，避免重复触发
+                root.centerOnIndex(savedIdx, savedAnimate)
+            }
+            // 若 delegate 仍未实例化，放弃（避免无限重试，等下次 lyricIndex 变化时自然对齐）
         }
     }
 

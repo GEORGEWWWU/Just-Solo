@@ -1205,14 +1205,19 @@ Window {
         }
     }
 
+    // 隐藏到系统托盘（音乐继续播放），由 onClosing 和托盘菜单共用
+    function hideToTray() {
+        _detailWasOpen = playerDetail.visible  // 记忆详情页状态，回到前台恢复
+        mainWindow.hide()
+        playerDetail.visible = false      // 关 ShaderEffectSource live
+    }
+
     // ---- 关闭窗口 ----
     // 根据设置决定最小化到系统托盘（音乐继续播放）或真退出
     onClosing: function(close) {
         if (musicManager.minimizeToTray) {
             close.accepted = false
-            _detailWasOpen = playerDetail.visible  // 记忆详情页状态，回到前台恢复
-            mainWindow.hide()
-            playerDetail.visible = false      // 关 ShaderEffectSource live
+            hideToTray()
         } else {
             // 真退出：清理播放状态
             playerDetail.visible = false

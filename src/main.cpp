@@ -105,6 +105,7 @@ static void setupSystemTray(QQuickWindow *window, MusicManager *mgr) {
     menu->addSeparator();
 
     QAction *showAction = menu->addAction("显示主窗口");
+    QAction *hideAction = menu->addAction("退出至托盘");
     QAction *miniAction = menu->addAction("迷你模式");
     QAction *quitAction = menu->addAction("退出");
 
@@ -149,6 +150,12 @@ static void setupSystemTray(QQuickWindow *window, MusicManager *mgr) {
         if (!miniWin.isValid() || miniWin.isNull()) {
             QMetaObject::invokeMethod(window, "_enterMiniMode");
         }
+    });
+
+    // 退出至托盘：隐藏主窗口（音乐继续播放），由 QML 端 hideToTray() 处理
+    // （同时记忆详情页状态、关闭 ShaderEffectSource 渲染）
+    QObject::connect(hideAction, &QAction::triggered, [window]() {
+        QMetaObject::invokeMethod(window, "hideToTray");
     });
 
     // 左键/双击托盘图标也恢复窗口（小窗模式同上去详情页）
