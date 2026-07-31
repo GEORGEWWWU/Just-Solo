@@ -34,13 +34,65 @@ Window {
     readonly property string _font: miniFont.name || fontFamily
 
     // ============================================================
-    // 圆角背景（与主页内容区背景色一致 #181818）
+    // 背景：封面取色 + 毛玻璃（与播放详情页一致）
+    // 四层叠加：兜底深色 → 放大封面 + MultiEffect 毛玻璃模糊（纹理）
+    //          → C++ 端提取的封面主色调半透明染色（取色）+ 深色压暗保证文字可读
+    // 每层自带 radius: 8，对齐外层圆角
     // ============================================================
+
+    // 兜底色：封面未加载 / 无封面时显示
     Rectangle {
         anchors.fill: parent
         radius: 8
         color: "#181818"
-        clip: true
+    }
+
+    // 放大的封面图作为毛玻璃纹理源
+    Image {
+        id: bgCover
+        anchors.fill: parent
+        source: (typeof musicManager !== "undefined" && musicManager) ? (musicManager.currentCover || "") : ""
+        fillMode: Image.PreserveAspectCrop
+        asynchronous: true
+        visible: source.toString() !== ""
+        opacity: status === Image.Ready ? 1 : 0
+        Behavior on opacity { NumberAnimation { duration: 400 } }
+
+        // 同时启用模糊（毛玻璃）和 mask（圆角裁剪到 8px）
+        layer.enabled: true
+        layer.effect: MultiEffect {
+            blurEnabled: true
+            blur: 1.0
+            blurMax: 64
+            maskEnabled: true
+            maskSource: ShaderEffectSource {
+                sourceItem: Rectangle {
+                    width: bgCover.width; height: bgCover.height; radius: 8
+                }
+            }
+        }
+    }
+
+    // 主色调染色层：用 C++ 端从封面提取的主色调为背景染色（取色）
+    // 切歌时颜色平滑过渡，无封面时回退到默认深灰
+    Rectangle {
+        anchors.fill: parent
+        radius: 8
+        color: {
+            var c = (typeof musicManager !== "undefined" && musicManager)
+                    ? (musicManager.currentCoverColor || "") : ""
+            return c !== "" ? c : "#181818"
+        }
+        opacity: 0.65
+        Behavior on color { ColorAnimation { duration: 600 } }
+    }
+
+    // 深色压暗遮罩：保证前景文字可读
+    Rectangle {
+        anchors.fill: parent
+        radius: 8
+        color: "#181818"
+        opacity: 0.35
     }
 
     // ============================================================
