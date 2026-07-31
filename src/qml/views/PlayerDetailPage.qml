@@ -63,18 +63,23 @@ Item {
         }
     }
 
-    // 滚动对齐到指定歌词行。
-    // 先 positionViewAtIndex 粗定位（平均行高估算）让目标行实例化，
-    // 再调用一次精确居中：此时目标行已实例化，Qt 按真实行高计算，无需手工几何换算。
+    // 滚动对齐到指定歌词行，使其精确居中。
+    // 歌词行高度不固定（有无翻译、长文本换行不同）。由于 cacheBuffer 足够大，
+    // 所有行都已实例化，几何信息始终是真实值，直接测量目标行在视口内的实际位置
+    // 即可算出精确落点，不存在平均行高估算误差，也不会随歌词行数累积偏移。
     // animate=true 时从当前滚动位置平滑滚过去；false 时直接落位（进入页面/快速 seek）。
     function centerOnIndex(idx, animate) {
         if (lyricsView.count === 0 || idx < 0) return
         lyricScrollAnim.stop()
         var from = lyricsView.contentY
-        lyricsView.positionViewAtIndex(idx, ListView.Center)
-        lyricsView.forceLayout()
-        lyricsView.positionViewAtIndex(idx, ListView.Center)
-        var to = lyricsView.contentY
+        var item = lyricsView.itemAtIndex(idx)
+        if (!item) return
+        // 目标行顶部在视口内的实际位置 → 需要滚动的偏移 = 视口中心 - 行中心
+        var topInView = item.mapToItem(lyricsView, 0, 0).y
+        var to = lyricsView.contentY + topInView - (lyricsView.height - item.height) / 2
+        // 边界钳制：开头/结尾的行无法完全居中
+        var maxY = Math.max(0, lyricsView.contentHeight - lyricsView.height)
+        to = Math.max(0, Math.min(to, maxY))
         if (animate !== false && Math.abs(to - from) >= 0.5) {
             lyricScrollAnim.from = from
             lyricScrollAnim.to = to
@@ -373,7 +378,11 @@ Item {
                 spacing: 20
                 // 上下留白让当前行居中，只展示约 5 句
                 topMargin: parent.height * 0.38; bottomMargin: parent.height * 0.38
-                clip: true; cacheBuffer: 400; reuseItems: true
+                clip: true; reuseItems: true
+                // cacheBuffer 调大：歌词行高度不固定（有无翻译/换行不同），
+                // 只实例化可视区的行时，Qt 对远处行按平均行高估算，居中会累计偏移；
+                // 全部行实例化后几何信息始终真实，任意行都能精确居中
+                cacheBuffer: 1000000
                 // 窗口大小变化后自动重新居中当前歌词（防抖，避免拖动过程中持续触发；平滑滚动）
                 onWidthChanged: { lyricRecenterTimer.snap = false; lyricRecenterTimer.restart() }
                 onHeightChanged: { lyricRecenterTimer.snap = false; lyricRecenterTimer.restart() }
