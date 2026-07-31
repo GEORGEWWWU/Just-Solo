@@ -18,6 +18,7 @@ Item {
 
     property bool opening: false
     property int _pastIdx: -1  // 已播放到的歌词行索引（前进时增大，回退/切歌时重置）
+    property int _lastIdxTime: 0  // 上次切行的时间戳，用于区分正常播放与快速 seek
 
     // 进入迷你小窗模式信号
     signal enterMiniMode()
@@ -62,36 +63,23 @@ Item {
         }
     }
 
-    // 平滑滚动到指定歌词行使其居中。
-    // 歌词行是变高的（有无翻译行、长文本换行不同），且多数行未实例化：
-    // 先 positionViewAtIndex 粗定位让目标行实例化并进入可视区（可能瞬时跳变，
-    // 随后动画立即覆盖，用户不可见），再测量该行顶部在视口内的真实位置，
-    // 计算精确居中所需的滚动偏移，最后从当前滚动位置动画过去。
-    function centerOnIndex(idx) {
+    // 滚动对齐到指定歌词行。
+    // 先 positionViewAtIndex 粗定位（平均行高估算）让目标行实例化，
+    // 再调用一次精确居中：此时目标行已实例化，Qt 按真实行高计算，无需手工几何换算。
+    // animate=true 时从当前滚动位置平滑滚过去；false 时直接落位（进入页面/快速 seek）。
+    function centerOnIndex(idx, animate) {
         if (lyricsView.count === 0 || idx < 0) return
+        lyricScrollAnim.stop()
         var from = lyricsView.contentY
-
-        // 第一步：粗定位（目标行进入可视区并被实例化）
         lyricsView.positionViewAtIndex(idx, ListView.Center)
         lyricsView.forceLayout()
-
-        // 第二步：用 mapToItem 实测目标行在视口内的位置，算精确居中偏移
-        // （不受 topMargin/bottomMargin/坐标基准等实现细节影响）
-        var item = lyricsView.itemAtIndex(idx)
-        if (!item) return
-        var topInView = item.mapToItem(lyricsView, 0, 0).y
-        var to = lyricsView.contentY + topInView - (lyricsView.height - item.height) / 2
-        // 边界钳制：开头/结尾的行无法完全居中
-        var maxY = Math.max(0, lyricsView.contentHeight - lyricsView.height)
-        to = Math.max(0, Math.min(to, maxY))
-
-        if (Math.abs(to - from) < 0.5) {
-            lyricsView.contentY = to // 已居中/差距过小，直接落位避免多余动画
-            return
+        lyricsView.positionViewAtIndex(idx, ListView.Center)
+        var to = lyricsView.contentY
+        if (animate !== false && Math.abs(to - from) >= 0.5) {
+            lyricScrollAnim.from = from
+            lyricScrollAnim.to = to
+            lyricScrollAnim.start()
         }
-        lyricScrollAnim.from = from
-        lyricScrollAnim.to = to
-        lyricScrollAnim.start()
     }
 
     onVisibleChanged: {
@@ -109,6 +97,9 @@ Item {
         function onCurrentLyricsChanged() {
             // 切换歌曲时重置已播索引，避免旧歌的 _pastIdx 污染新歌词的状态
             root._pastIdx = -1
+            // 歌词模型已替换（ListView 内容重置），等布局稳定后直接对齐首行
+            lyricRecenterTimer.snap = true
+            lyricRecenterTimer.restart()
         }
         function onLyricIndexChanged() {
             var idx = musicManager.lyricIndex
@@ -119,8 +110,12 @@ Item {
             // 正常前进：_pastIdx 跟随当前行（只增大不收缩）
             if (idx > root._pastIdx)
                 root._pastIdx = idx
-            // 每次切行都平滑滚动对齐（同索引不重复发信号，无需额外去重）
-            root.centerOnIndex(idx)
+            // 300ms 内连续切行视为拖动进度条（快速 seek），直接落位避免动画追赶不上；
+            // 正常播放切行则平滑滚动
+            var now = Date.now()
+            var rapid = now - root._lastIdxTime < 300
+            root._lastIdxTime = now
+            root.centerOnIndex(idx, !rapid)
         }
     }
 
@@ -145,8 +140,8 @@ Item {
             }
         }
         ScriptAction { script: root.opening = false }
-        // 进入详情页后自动滚动对齐当前歌词行
-        ScriptAction { script: root.centerOnIndex((typeof musicManager !== "undefined" && musicManager) ? musicManager.lyricIndex : -1) }
+        // 进入详情页后直接对齐当前歌词行（立即居中，不做长滚动）
+        ScriptAction { script: root.centerOnIndex((typeof musicManager !== "undefined" && musicManager) ? musicManager.lyricIndex : -1, false) }
     }
 
     SequentialAnimation {
@@ -379,9 +374,9 @@ Item {
                 // 上下留白让当前行居中，只展示约 5 句
                 topMargin: parent.height * 0.38; bottomMargin: parent.height * 0.38
                 clip: true; cacheBuffer: 400; reuseItems: true
-                // 窗口大小变化后自动重新居中当前歌词（防抖，避免拖动过程中持续触发）
-                onWidthChanged: lyricRecenterTimer.restart()
-                onHeightChanged: lyricRecenterTimer.restart()
+                // 窗口大小变化后自动重新居中当前歌词（防抖，避免拖动过程中持续触发；平滑滚动）
+                onWidthChanged: { lyricRecenterTimer.snap = false; lyricRecenterTimer.restart() }
+                onHeightChanged: { lyricRecenterTimer.snap = false; lyricRecenterTimer.restart() }
 
                 delegate: Item {
                     id: lyricDelegate
@@ -469,15 +464,17 @@ Item {
                 }
             }
 
-            // 窗口尺寸变化（换行宽度/视口高度改变）后，平滑滚动把当前歌词重新居中
+            // 窗口尺寸变化（换行宽度/视口高度改变）后，把当前歌词重新居中。
+            // snap=true 表示歌词模型刚替换，需要直接对齐（无滚动）；尺寸变化则平滑滚动。
             Timer {
                 id: lyricRecenterTimer
                 interval: 150
+                property bool snap: false
                 onTriggered: {
                     if (lyricsView.count === 0) return
                     var mgr = (typeof musicManager !== "undefined" && musicManager) ? musicManager : null
                     if (mgr && mgr.lyricIndex >= 0)
-                        root.centerOnIndex(mgr.lyricIndex)
+                        root.centerOnIndex(mgr.lyricIndex, !snap)
                 }
             }
 
