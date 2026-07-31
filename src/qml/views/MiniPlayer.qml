@@ -194,7 +194,7 @@ Window {
                     var a = (musicManager.currentArtist || "").replace(/[/;｜|]+/g, "、")
                     return a || ""
                 }
-                font.family: _font; font.pixelSize: 11; color: "#999"
+                font.family: _font; font.pixelSize: 11; color: "#FFFFFF"
                 Layout.fillWidth: true
                 Layout.preferredHeight: 14
                 horizontalAlignment: Text.AlignHCenter
@@ -262,7 +262,12 @@ Window {
                                 var m = (typeof musicManager !== "undefined" && musicManager) ? musicManager.playMode : 0
                                 return "qrc:/qt/qml/JustSolo/data/image/" + modeItem.modeIcons[m]
                             }
-                            width: 18; height: 18; opacity: 0.8
+                            width: 18; height: 18
+                            // 强制图标为纯白 #FFFFFF
+                            layer.enabled: true
+                            layer.effect: MultiEffect {
+                                brightness: 1.0
+                            }
                         }
 
                         Timer {
