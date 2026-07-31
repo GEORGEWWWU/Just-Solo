@@ -77,9 +77,11 @@ Item {
         // 目标行顶部在视口内的实际位置 → 需要滚动的偏移 = 视口中心 - 行中心
         var topInView = item.mapToItem(lyricsView, 0, 0).y
         var to = lyricsView.contentY + topInView - (lyricsView.height - item.height) / 2
-        // 边界钳制：开头/结尾的行无法完全居中
-        var maxY = Math.max(0, lyricsView.contentHeight - lyricsView.height)
-        to = Math.max(0, Math.min(to, maxY))
+        // 边界钳制：允许越过首尾边界（借用 topMargin/bottomMargin 空间），
+        // 让第一句和最后一句也能滚动到视口中心
+        var minY = -lyricsView.topMargin
+        var maxY = lyricsView.contentHeight - lyricsView.height + lyricsView.bottomMargin
+        to = Math.max(minY, Math.min(to, maxY))
         if (animate !== false && Math.abs(to - from) >= 0.5) {
             lyricScrollAnim.from = from
             lyricScrollAnim.to = to
@@ -488,12 +490,15 @@ Item {
             }
 
             // 歌词滚动动画（手动控制，替代 Behavior on contentY，避免定位时直接跳变）
+            // 用 OutCubic（起步即最大速度）：切行途中再次定位会 stop 后重启动画，
+            // 若缓动从 0 起步（如 InOutQuad），重启瞬间速度归零，视觉上会"停一下再继续"；
+            // OutCubic 重启时直接以高速延续，无停顿感，单次滚动也有平滑减速收尾
             NumberAnimation {
                 id: lyricScrollAnim
                 target: lyricsView
                 property: "contentY"
                 duration: 1000
-                easing.type: Easing.InOutQuad
+                easing.type: Easing.OutCubic
             }
         }
     }
