@@ -188,12 +188,61 @@ Item {
     }
 
     // ============================================================
-    // 背景
+    // 背景：封面取色 + 毛玻璃效果
+    // 三层叠加：兜底深色 → 放大封面 + MultiEffect 毛玻璃模糊（纹理）
+    //          → C++ 端提取的封面主色调半透明染色（取色）+ 深色压暗保证文字可读
     // ============================================================
-    Rectangle { 
+    Item {
+        id: bgLayer
         anchors.fill: parent
         anchors.bottomMargin: 75 // 让出底部的画面，露出 main.qml 的控制栏
-        color: "#1E1E1E" 
+        clip: true
+
+        // 兜底色：封面未加载 / 无封面时显示
+        Rectangle {
+            anchors.fill: parent
+            color: "#1E1E1E"
+        }
+
+        // 放大的封面图作为毛玻璃纹理源
+        Image {
+            id: bgCover
+            anchors.fill: parent
+            source: (typeof musicManager !== "undefined" && musicManager) ? (musicManager.currentCover || "") : ""
+            fillMode: Image.PreserveAspectCrop
+            asynchronous: true
+            visible: source.toString() !== ""
+            opacity: status === Image.Ready ? 1 : 0
+            Behavior on opacity { NumberAnimation { duration: 400 } }
+
+            // 毛玻璃模糊
+            layer.enabled: true
+            layer.effect: MultiEffect {
+                blurEnabled: true
+                blur: 1.0       // 模糊强度（最大）
+                blurMax: 64     // 模糊半径上限（像素），越大越柔和
+            }
+        }
+
+        // 主色调染色层：用 C++ 端从封面提取的主色调为背景染色（取色）
+        // 切歌时颜色平滑过渡，无封面时回退到默认深灰
+        Rectangle {
+            anchors.fill: parent
+            color: {
+                var c = (typeof musicManager !== "undefined" && musicManager)
+                        ? (musicManager.currentCoverColor || "") : ""
+                return c !== "" ? c : "#1E1E1E"
+            }
+            opacity: 0.65
+            Behavior on color { ColorAnimation { duration: 600 } }
+        }
+
+        // 深色压暗遮罩：保证前景歌词与按钮可读
+        Rectangle {
+            anchors.fill: parent
+            color: "#1E1E1E"
+            opacity: 0.35
+        }
     }
 
     // 迷你小窗按钮

@@ -1389,8 +1389,97 @@ void MusicManager::updateCurrentTrack() {
         m_currentMediaPath.clear();
         m_currentLyrics.clear();
     }
+    updateCurrentCoverColor();  // 提取封面主色调（在 emit currentTrackChanged 之前完成）
     emit currentTrackChanged();
     emit currentLyricsChanged();
+}
+
+// 从封面图提取主色调（#RRGGBB），失败返回空串
+// 算法：缩放到 64×64 → 4-bit 量化颜色直方图 → 跳过过暗/过亮/过灰像素
+// → 取像素最多的 bucket 的平均色
+QString MusicManager::extractCoverColor(const QString &coverUrl) {
+    if (coverUrl.isEmpty()) return QString();
+
+    QString path = QUrl(coverUrl).toLocalFile();
+    if (path.isEmpty()) return QString();
+
+    QImage img(path);
+    if (img.isNull()) return QString();
+
+    // 缩放到小尺寸加速（保持比例，快变换）
+    img = img.scaled(64, 64, Qt::KeepAspectRatio, Qt::FastTransformation);
+    if (img.isNull()) return QString();
+
+    img = img.convertToFormat(QImage::Format_RGB32);
+    if (img.isNull()) return QString();
+
+    // 4-bit per channel 量化（16 × 16 × 16 = 4096 buckets）
+    const int BUCKETS = 16;
+    QVector<int> count(BUCKETS * BUCKETS * BUCKETS, 0);
+    QVector<quint64> rSum(BUCKETS * BUCKETS * BUCKETS, 0);
+    QVector<quint64> gSum(BUCKETS * BUCKETS * BUCKETS, 0);
+    QVector<quint64> bSum(BUCKETS * BUCKETS * BUCKETS, 0);
+
+    int validPixels = 0;
+    for (int y = 0; y < img.height(); ++y) {
+        const QRgb *line = reinterpret_cast<const QRgb*>(img.constScanLine(y));
+        for (int x = 0; x < img.width(); ++x) {
+            QRgb rgb = line[x];
+            int r = qRed(rgb);
+            int g = qGreen(rgb);
+            int b = qBlue(rgb);
+
+            // 用 RGB max/min 近似 HSV 的 V 和 S，避免 QColor 构造开销
+            int maxC = r > g ? (r > b ? r : b) : (g > b ? g : b);
+            int minC = r < g ? (r < b ? r : b) : (g < b ? g : b);
+            qreal v = maxC / 255.0;
+            qreal s = maxC > 0 ? (maxC - minC) / qreal(maxC) : 0.0;
+
+            // 跳过过暗（接近黑）/ 过亮（接近白）/ 过灰（饱和度低）
+            if (v < 0.2 || v > 0.95 || s < 0.15) continue;
+
+            int ri = r >> 4;  // r / 16
+            int gi = g >> 4;
+            int bi = b >> 4;
+            int idx = (ri * BUCKETS + gi) * BUCKETS + bi;
+            count[idx]++;
+            rSum[idx] += quint64(r);
+            gSum[idx] += quint64(g);
+            bSum[idx] += quint64(b);
+            ++validPixels;
+        }
+    }
+
+    if (validPixels == 0) return QString();
+
+    // 取像素最多的 bucket 的平均色
+    int bestIdx = 0;
+    int bestCount = 0;
+    for (int i = 0; i < count.size(); ++i) {
+        if (count[i] > bestCount) {
+            bestCount = count[i];
+            bestIdx = i;
+        }
+    }
+    if (bestCount == 0) return QString();
+
+    int r = int(rSum[bestIdx] / quint64(bestCount));
+    int g = int(gSum[bestIdx] / quint64(bestCount));
+    int b = int(bSum[bestIdx] / quint64(bestCount));
+
+    return QString("#%1%2%3")
+        .arg(r, 2, 16, QChar('0'))
+        .arg(g, 2, 16, QChar('0'))
+        .arg(b, 2, 16, QChar('0'));
+}
+
+// 根据当前 m_currentCover 提取主色调，变化时发出通知
+void MusicManager::updateCurrentCoverColor() {
+    QString newColor = extractCoverColor(m_currentCover);
+    if (newColor != m_currentCoverColor) {
+        m_currentCoverColor = newColor;
+        emit currentCoverColorChanged();
+    }
 }
 
 // ---- C++ 端计算歌词索引（纯整数比较，零分配） ----

@@ -23,6 +23,7 @@ class MusicManager : public QObject
     Q_PROPERTY(QString currentTitle READ currentTitle NOTIFY currentTrackChanged)
     Q_PROPERTY(QString currentArtist READ currentArtist NOTIFY currentTrackChanged)
     Q_PROPERTY(QString currentCover READ currentCover NOTIFY currentTrackChanged)
+    Q_PROPERTY(QString currentCoverColor READ currentCoverColor NOTIFY currentCoverColorChanged)
     Q_PROPERTY(QString currentAlbum READ currentAlbum NOTIFY currentTrackChanged)
     Q_PROPERTY(bool isLoading READ isLoading NOTIFY isLoadingChanged)
     Q_PROPERTY(qreal importProgress READ importProgress NOTIFY importProgressChanged)
@@ -105,6 +106,7 @@ public:
     QString currentTitle() const;
     QString currentArtist() const;
     QString currentCover() const { return m_currentCover; }
+    QString currentCoverColor() const { return m_currentCoverColor; }
     QString currentAlbum() const;
     QVariantList currentLyrics() const { return m_currentLyrics; }
     int lyricIndex() const { return m_lyricIndex; }
@@ -190,6 +192,7 @@ signals:
     void currentIndexChanged();
     void playbackStateChanged();
     void currentTrackChanged();
+    void currentCoverColorChanged();
     void currentLyricsChanged();
     void lyricIndexChanged();
     void detailOpacityChanged();
@@ -218,6 +221,8 @@ private:
     QVector<LyricEntry> m_lyricCache;
 
     void updateCurrentTrack();
+    void updateCurrentCoverColor();          // 从 m_currentCover 提取主色调
+    static QString extractCoverColor(const QString &coverUrl);
     void updateLyricIndex();
     void onMetaDataChanged();
     void scanFolder(const QString &path);
@@ -258,6 +263,7 @@ private:
     void saveSettings();
     int m_currentIndex = -1;
     QString m_currentCover;
+    QString m_currentCoverColor;   // 从封面提取的主色调（#RRGGBB），空串表示无封面
     QString m_currentAlbum;
     QString m_currentMediaPath;    // 当前媒体文件路径
     QString m_originalCoverPath;   // 原画质封面临时文件路径
