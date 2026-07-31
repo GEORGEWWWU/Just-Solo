@@ -8,9 +8,16 @@ Item {
 
     required property string fontFamily
 
+    // 歌词布局字号：最大化窗口保持原字号，默认窗口略小
+    property real _fontFactor: (typeof mainWindow !== "undefined" && mainWindow && mainWindow.visibility === Window.Maximized) ? 1.0 : 0.85
+    property real mainFontSize: 52 * _fontFactor
+    property real transFontSize: 30 * _fontFactor
+
+    // 封面高度系数：最大化窗口时封面再放大一点
+    property real _coverHeightFactor: (typeof mainWindow !== "undefined" && mainWindow && mainWindow.visibility === Window.Maximized) ? 0.62 : 0.55
+
     property bool opening: false
-    property int _lastScroll: -1
-    property int _pastIdx: -1  // 已播放到的歌词行索引（前进时增大，回退时重置）
+    property int _pastIdx: -1  // 已播放到的歌词行索引（前进时增大，回退/切歌时重置）
 
     // 进入迷你小窗模式信号
     signal enterMiniMode()
@@ -43,7 +50,6 @@ Item {
         openAnim.stop()
         closeAnim.stop()
         opening = true
-        _lastScroll = -1
         if (visible) {
             // visible 仍为 true，但可能被动画中断导致 opacity=0 / _slideOffset=height
             // 直接重置状态并主动启动打开动画
@@ -56,9 +62,40 @@ Item {
         }
     }
 
+    // 平滑滚动到指定歌词行使其居中。
+    // 歌词行是变高的（有无翻译行、长文本换行不同），且多数行未实例化：
+    // 先 positionViewAtIndex 粗定位让目标行实例化并进入可视区（可能瞬时跳变，
+    // 随后动画立即覆盖，用户不可见），再测量该行顶部在视口内的真实位置，
+    // 计算精确居中所需的滚动偏移，最后从当前滚动位置动画过去。
+    function centerOnIndex(idx) {
+        if (lyricsView.count === 0 || idx < 0) return
+        var from = lyricsView.contentY
+
+        // 第一步：粗定位（目标行进入可视区并被实例化）
+        lyricsView.positionViewAtIndex(idx, ListView.Center)
+        lyricsView.forceLayout()
+
+        // 第二步：用 mapToItem 实测目标行在视口内的位置，算精确居中偏移
+        // （不受 topMargin/bottomMargin/坐标基准等实现细节影响）
+        var item = lyricsView.itemAtIndex(idx)
+        if (!item) return
+        var topInView = item.mapToItem(lyricsView, 0, 0).y
+        var to = lyricsView.contentY + topInView - (lyricsView.height - item.height) / 2
+        // 边界钳制：开头/结尾的行无法完全居中
+        var maxY = Math.max(0, lyricsView.contentHeight - lyricsView.height)
+        to = Math.max(0, Math.min(to, maxY))
+
+        if (Math.abs(to - from) < 0.5) {
+            lyricsView.contentY = to // 已居中/差距过小，直接落位避免多余动画
+            return
+        }
+        lyricScrollAnim.from = from
+        lyricScrollAnim.to = to
+        lyricScrollAnim.start()
+    }
+
     onVisibleChanged: {
         if (visible) {
-            _lastScroll = -1
             opening = true
             openAnim.start() // 直接启动动画，不再等待毛玻璃渲染
         } else {
@@ -75,17 +112,15 @@ Item {
         }
         function onLyricIndexChanged() {
             var idx = musicManager.lyricIndex
-            if (lyricsView.count === 0) return
-            // lyricIndex 回退（单曲循环回到开头 / 手动 seek 回退）→ 重置已播状态
+            if (idx < 0) return
+            // 回退（单曲循环回到开头 / 手动 seek 回退）→ 重置已播状态后重新高亮
             if (idx < root._pastIdx)
                 root._pastIdx = -1
-            if (idx < 0) return
             // 正常前进：_pastIdx 跟随当前行（只增大不收缩）
             if (idx > root._pastIdx)
                 root._pastIdx = idx
-            if (idx === root._lastScroll) return
-            root._lastScroll = idx
-            lyricsView.positionViewAtIndex(idx, ListView.Center)
+            // 每次切行都平滑滚动对齐（同索引不重复发信号，无需额外去重）
+            root.centerOnIndex(idx)
         }
     }
 
@@ -110,6 +145,8 @@ Item {
             }
         }
         ScriptAction { script: root.opening = false }
+        // 进入详情页后自动滚动对齐当前歌词行
+        ScriptAction { script: root.centerOnIndex((typeof musicManager !== "undefined" && musicManager) ? musicManager.lyricIndex : -1) }
     }
 
     SequentialAnimation {
@@ -220,14 +257,13 @@ Item {
             id: coverArea
             anchors.top: parent.top; anchors.bottom: parent.bottom
             anchors.left: parent.left
-            width: mainWindow.visibility === Window.Maximized ? 
-                   parent.width * 0.4 : Math.min(parent.width * 0.45, 420)
+            width: parent.width * 4 / 9 // 左右 4:5（左封面 : 右歌词）
 
             Rectangle {
                 id: coverBox
                 anchors.horizontalCenter: parent.horizontalCenter
                 y: Math.max(0, parent.height * 0.04)
-                width: Math.min(parent.width * 0.85, parent.height * 0.42)
+                width: Math.min(parent.width * 0.88, parent.height * root._coverHeightFactor)
                 height: width; radius: 12; color: "#222222"
 
                 Image {
@@ -321,7 +357,7 @@ Item {
             }
         }
 
-        // 右：歌词（只展示 5 句，自动换行）
+        // 右：歌词（只展示约 5 句；换行按固定字号预先排好，读到某句仅放大不重排）
         Item {
             id: lyricsCol
             anchors.top: parent.top; anchors.bottom: parent.bottom
@@ -343,7 +379,9 @@ Item {
                 // 上下留白让当前行居中，只展示约 5 句
                 topMargin: parent.height * 0.38; bottomMargin: parent.height * 0.38
                 clip: true; cacheBuffer: 400; reuseItems: true
-                Behavior on contentY { NumberAnimation { duration: 1000; easing.type: Easing.InOutQuad } }
+                // 窗口大小变化后自动重新居中当前歌词（防抖，避免拖动过程中持续触发）
+                onWidthChanged: lyricRecenterTimer.restart()
+                onHeightChanged: lyricRecenterTimer.restart()
 
                 delegate: Item {
                     id: lyricDelegate
@@ -354,11 +392,17 @@ Item {
                     property bool isPast: index < root._pastIdx
                     property bool hasTrans: (modelData.translation || "") !== ""
 
-                    // 歌词主体（行高自适应，整段通过单色控制高亮）
+                    // 放大比例：所有行都按放大后的固定字号布局，非当前行通过 Scale 缩小，当前行放大到原尺寸
+                    property real mainScale: isCurrent ? 1.0 : 36 / 58
+                    property real transScale: isCurrent ? 1.0 : 24 / 34
+
+                    // 歌词主体（行高按固定字号布局，换行恒定，仅视觉缩放切换高亮）
+                    // 垂直居中于 delegate（delegate 比内容高 8px），保证 ListView.Center
+                    // 居中 delegate 时文本块的视觉中心恰好落在视口中心，无 4px 偏移
                     Item {
                         id: mainContainer
                         anchors.left: parent.left; anchors.leftMargin: 4
-                        anchors.top: parent.top
+                        anchors.verticalCenter: parent.verticalCenter
                         width: lyricsView.width - 8
                         height: mainCol.implicitHeight
 
@@ -366,7 +410,7 @@ Item {
                             id: mainCol
                             spacing: 4
 
-                            // 主歌词行（高度自适应，超长自动换行）
+                            // 主歌词行（固定字号布局保证换行稳定，超长自动换行）
                             Item {
                                 width: mainContainer.width
                                 height: Math.max(52, mainText.implicitHeight)
@@ -375,21 +419,26 @@ Item {
                                 Text {
                                     id: mainText
                                     anchors.left: parent.left
-                                    y: (parent.height - height) / 2
+                                    // 缩小文本在行槽内垂直居中（跟随缩放动画逐帧更新），保证当前行与上下行间距一致
+                                    y: (parent.height - height * scale) / 2
                                     width: parent.width
                                     text: modelData.text || ""
                                     font.family: root.fontFamily
-                                    font.pixelSize: lyricDelegate.isCurrent ? 58 : 36
+                                    font.pixelSize: root.mainFontSize // 固定布局字号，换行在加载时即确定
                                     // 单层文本直接切换高亮色，无需 overlay 叠加
                                     color: lyricDelegate.isPast ? "#FFD700"
                                          : (lyricDelegate.isCurrent ? "#00d4ff" : "#6a9ac0")
                                     horizontalAlignment: Text.AlignLeft
                                     wrapMode: Text.WordWrap
-                                    Behavior on font.pixelSize { NumberAnimation { duration: 300; easing.type: Easing.OutCubic } }
+                                    // 仅做视觉缩放（当前行 1.0，非当前行缩至 36/58），不改变换行
+                                    // 用 Item.scale 而非 transform:Scale 对象，避免 delegate 复用/销毁时动画崩溃
+                                    scale: lyricDelegate.mainScale
+                                    transformOrigin: Item.TopLeft
+                                    Behavior on scale { NumberAnimation { duration: 300; easing.type: Easing.OutCubic } }
                                 }
                             }
 
-                            // 翻译行（高度自适应）
+                            // 翻译行（固定字号布局，高度自适应）
                             Item {
                                 width: mainContainer.width
                                 height: hasTrans ? Math.max(38, transText.implicitHeight) : 0
@@ -399,21 +448,46 @@ Item {
                                 Text {
                                     id: transText
                                     anchors.left: parent.left
-                                    y: (parent.height - height) / 2
+                                    // 缩小文本在行槽内垂直居中（跟随缩放动画逐帧更新），保证当前行与上下行间距一致
+                                    y: (parent.height - height * scale) / 2
                                     width: parent.width
                                     text: modelData.translation || ""
                                     font.family: root.fontFamily
-                                    font.pixelSize: lyricDelegate.isCurrent ? 34 : 24
+                                    font.pixelSize: root.transFontSize // 固定布局字号
                                     color: lyricDelegate.isPast ? "#b8960f"
                                          : (lyricDelegate.isCurrent ? "#FFD700" : "#4a6a8a")
                                     horizontalAlignment: Text.AlignLeft
                                     wrapMode: Text.WordWrap
-                                    Behavior on font.pixelSize { NumberAnimation { duration: 300; easing.type: Easing.OutCubic } }
+                                    // 仅做视觉缩放（当前行 1.0，非当前行缩至 24/34）
+                                    scale: lyricDelegate.transScale
+                                    transformOrigin: Item.TopLeft
+                                    Behavior on scale { NumberAnimation { duration: 300; easing.type: Easing.OutCubic } }
                                 }
                             }
                         }
                     }
                 }
+            }
+
+            // 窗口尺寸变化（换行宽度/视口高度改变）后，平滑滚动把当前歌词重新居中
+            Timer {
+                id: lyricRecenterTimer
+                interval: 150
+                onTriggered: {
+                    if (lyricsView.count === 0) return
+                    var mgr = (typeof musicManager !== "undefined" && musicManager) ? musicManager : null
+                    if (mgr && mgr.lyricIndex >= 0)
+                        root.centerOnIndex(mgr.lyricIndex)
+                }
+            }
+
+            // 歌词滚动动画（手动控制，替代 Behavior on contentY，避免定位时直接跳变）
+            NumberAnimation {
+                id: lyricScrollAnim
+                target: lyricsView
+                property: "contentY"
+                duration: 1000
+                easing.type: Easing.InOutQuad
             }
         }
     }

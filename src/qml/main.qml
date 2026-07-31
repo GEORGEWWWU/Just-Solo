@@ -48,6 +48,8 @@ Window {
 
     // ---- 播放详情页控制 ----
     property bool showPlayerDetail: false
+    // 记忆详情页打开状态：窗口隐藏到后台时记录，回到前台自动恢复
+    property bool _detailWasOpen: false
 
     // ---- 迷你小窗 ----
     property var _miniWindow: null
@@ -1208,6 +1210,7 @@ Window {
     onClosing: function(close) {
         if (musicManager.minimizeToTray) {
             close.accepted = false
+            _detailWasOpen = playerDetail.visible  // 记忆详情页状态，回到前台恢复
             mainWindow.hide()
             playerDetail.visible = false      // 关 ShaderEffectSource live
         } else {
@@ -1220,15 +1223,22 @@ Window {
 
     // 从托盘恢复 / 小窗退出时，播放主窗口出现动画并打开播放详情页
     onVisibleChanged: {
-        if (!visible) return
+        if (!visible) {
+            // 窗口进入后台（隐藏到托盘）：记住详情页是否打开
+            if (playerDetail.visible)
+                _detailWasOpen = true
+            return
+        }
         // 小窗退出：先销毁小窗再开详情页
         if (_miniWindow) {
             _miniWindow.destroy()
             _miniWindow = null
         }
-        if (_pendingMiniExit) {
+        // 回到前台：若后台时详情页是打开的（或从小窗退出），自动拉回
+        if (_pendingMiniExit || _detailWasOpen) {
             _pendingMiniExit = false
-            // 小窗退出 → 用系统动画拉起主窗口后打开详情页
+            _detailWasOpen = false
+            // 用系统动画拉起主窗口后打开详情页
             showPlayerDetail = true
             playerDetail.reopen()
         }
@@ -1452,7 +1462,10 @@ Window {
                     onEntered: playerCoverRect.color = "#4A4A4A"
                     onExited: playerCoverRect.color = "#3A3A3A"
                     onClicked: {
-                        if (musicManager.currentIndex >= 0) {
+                        // 详情页已打开 → 点击左下角封面退出；否则打开
+                        if (playerDetail.visible) {
+                            playerDetail.close()
+                        } else if (musicManager.currentIndex >= 0) {
                             showPlayerDetail = true
                             playerDetail.reopen()
                         }

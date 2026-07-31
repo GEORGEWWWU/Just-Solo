@@ -175,6 +175,7 @@ void AudioEngine::seek(qint64 ms)
 {
     if (m_hotplugMode) {
         m_hotplugPosition = qBound(0LL, ms, m_hotplugDuration > 0 ? m_hotplugDuration : ms);
+        emit positionChanged(m_hotplugPosition);
         return;
     }
     if (!m_soundInitialized || m_cachedDuration <= 0) return;
@@ -187,12 +188,30 @@ void AudioEngine::seek(qint64 ms)
         static_cast<double>(qBound(0LL, ms, m_cachedDuration)) / m_cachedDuration * frames
     );
     ma_sound_seek_to_pcm_frame(m_sound, targetFrame);
+    // seek 在混音线程延迟生效，但游标接口能立即感知 seekTarget，
+    // 这里主动上报一次新位置，让进度条/歌词即刻跳转，无需等 50ms 轮询
+    emit positionChanged(position());
 }
 
 qint64 AudioEngine::position() const
 {
     if (m_hotplugMode) return m_hotplugPosition;
     if (!m_soundInitialized) return 0;
+
+    // 用数据源游标而非节点时间轴：ma_sound_get_time_in_milliseconds() 基于节点
+    // localTime（按引擎采样率累计），而 seek 时 localTime 被写入的是“文件采样率”的
+    // 帧号（ma_node_set_time(pSound, seekTarget)），却仍除以引擎采样率——文件与
+    // 引擎采样率不一致时（如 44.1k 文件 + 48k 设备），seek 后位置整体偏移，歌词错位。
+    // 游标则始终以数据源（文件）帧号表示，且能感知未完成的 seek（直接返回 seekTarget）。
+    ma_uint64 cursor = 0;
+    if (ma_sound_get_cursor_in_pcm_frames(m_sound, &cursor) == MA_SUCCESS) {
+        ma_uint32 sampleRate = 0;
+        if (ma_sound_get_data_format(m_sound, nullptr, nullptr, &sampleRate, nullptr, 0) == MA_SUCCESS
+            && sampleRate > 0) {
+            return static_cast<qint64>(cursor) * 1000 / sampleRate;
+        }
+    }
+    // 兜底：无数据源等异常情况下退回旧实现
     return static_cast<qint64>(ma_sound_get_time_in_milliseconds(m_sound));
 }
 
