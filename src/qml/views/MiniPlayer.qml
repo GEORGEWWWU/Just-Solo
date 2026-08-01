@@ -39,9 +39,8 @@ Window {
 
     // ============================================================
     // 背景：深色背景 / 沉浸背景（与播放详情页一致）
-    // 深色背景 = 兜底深色单层；沉浸背景额外叠加三层：
-    //   放大封面 + MultiEffect 模糊纹理（沉浸）
-    //   → C++ 端提取的封面主色调半透明染色（取色）+ 深色压暗保证文字可读
+    // 深色背景 = 兜底深色单层；沉浸背景额外叠加两层：
+    //   C++ 端提取的封面主色调作为底色 → 渐变遮罩（上透下暗）形成渐变色背景
     // 每层自带 radius: 8，对齐外层圆角
     // ============================================================
 
@@ -59,41 +58,9 @@ Window {
         opacity: miniWindow._immersiveBg ? 1 : 0
         Behavior on opacity { NumberAnimation { duration: 400 } }
 
-        // 放大的封面图作为沉浸背景的模糊纹理源
-        Image {
-            id: bgCover
-            anchors.fill: parent
-            source: (typeof musicManager !== "undefined" && musicManager) ? (musicManager.currentCover || "") : ""
-            fillMode: Image.PreserveAspectCrop
-            asynchronous: true
-            // 沉浸背景内存优化：背景会被强模糊，视觉上无需全分辨率
-            // sourceSize 限制封面解码尺寸；layer.textureSize 将模糊渲染纹理降至 1/4（显存占用约降为 1/16）
-            sourceSize: Qt.size(Math.max(96, Math.round(width / 4)),
-                                Math.max(96, Math.round(height / 4)))
-            visible: source.toString() !== ""
-            opacity: status === Image.Ready ? 1 : 0
-            Behavior on opacity { NumberAnimation { duration: 400 } }
-
-            // 同时启用模糊（沉浸）和 mask（圆角裁剪到 8px），纹理同步降采样
-            layer.enabled: true
-            layer.textureSize: Qt.size(Math.max(1, Math.round(width / 4)),
-                                       Math.max(1, Math.round(height / 4)))
-            layer.effect: MultiEffect {
-                blurEnabled: true
-                blur: 1.0
-                blurMax: 16     // 纹理降至 1/4，半径同比缩小以保持原有模糊观感
-                maskEnabled: true
-                maskSource: ShaderEffectSource {
-                    sourceItem: Rectangle {
-                        width: bgCover.width; height: bgCover.height; radius: 8
-                    }
-                }
-            }
-        }
-
-        // 主色调染色层：用 C++ 端从封面提取的主色调为背景染色（取色）
-        // 切歌时颜色平滑过渡，无封面时回退到默认深灰
+        // 主色调底层：切歌时颜色平滑过渡（ColorAnimation）
         Rectangle {
+            id: immersiveBase
             anchors.fill: parent
             radius: 8
             color: {
@@ -101,16 +68,18 @@ Window {
                         ? (musicManager.currentCoverColor || "") : ""
                 return c !== "" ? c : "#181818"
             }
-            opacity: 0.65
             Behavior on color { ColorAnimation { duration: 600 } }
         }
 
-        // 深色压暗遮罩：保证前景文字可读
+        // 渐变遮罩：顶部透出主色调，底部过渡到深色，形成渐变色背景
         Rectangle {
             anchors.fill: parent
             radius: 8
-            color: "#181818"
-            opacity: 0.35
+            gradient: Gradient {
+                GradientStop { position: 0.0; color: "transparent" }
+                GradientStop { position: 0.4; color: "#50181818" }
+                GradientStop { position: 1.0; color: "#D8181818" }
+            }
         }
     }
 
