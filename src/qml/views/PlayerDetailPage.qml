@@ -20,6 +20,10 @@ Item {
     property int _pastIdx: -1  // 已播放到的歌词行索引（前进时增大，回退/切歌时重置）
     property int _lastIdxTime: 0  // 上次切行的时间戳，用于区分正常播放与快速 seek
 
+    // 播放背景模式：0=深色背景，1=沉浸背景（与设置页联动）
+    readonly property bool _immersiveBg: (typeof musicManager !== "undefined" && musicManager)
+                                         ? musicManager.playbackBackground === 1 : false
+
     // 进入迷你小窗模式信号
     signal enterMiniMode()
 
@@ -218,9 +222,10 @@ Item {
     }
 
     // ============================================================
-    // 背景：沉浸背景（封面取色 + 模糊）
-    // 四层叠加：兜底深色 → 放大封面 + MultiEffect 模糊纹理（沉浸）
-    //          → C++ 端提取的封面主色调半透明染色（取色）+ 深色压暗保证文字可读
+    // 背景：深色背景 / 沉浸背景（封面取色 + 模糊）
+    // 深色背景 = 兜底深色单层；沉浸背景额外叠加三层：
+    //   放大封面 + MultiEffect 模糊纹理（沉浸）
+    //   → C++ 端提取的封面主色调半透明染色（取色）+ 深色压暗保证文字可读
     // ============================================================
     Item {
         id: bgLayer
@@ -228,56 +233,64 @@ Item {
         anchors.bottomMargin: 75 // 让出底部的画面，露出 main.qml 的控制栏
         clip: true
 
-        // 兜底色：封面未加载 / 无封面时显示
+        // 兜底色：深色背景模式下的唯一背景（也是沉浸模式的兜底）
         Rectangle {
             anchors.fill: parent
             color: "#1E1E1E"
         }
 
-        // 放大的封面图作为沉浸背景的模糊纹理源
-        Image {
-            id: bgCover
+        // 沉浸背景层：仅在沉浸背景模式下渲染，淡出结束后自动隐藏以节省性能
+        Item {
             anchors.fill: parent
-            source: (typeof musicManager !== "undefined" && musicManager) ? (musicManager.currentCover || "") : ""
-            fillMode: Image.PreserveAspectCrop
-            asynchronous: true
-            // 沉浸背景内存优化：背景会被强模糊，视觉上无需全分辨率
-            // sourceSize 限制封面解码尺寸；layer.textureSize 将模糊渲染纹理降至 1/4（显存占用约降为 1/16）
-            sourceSize: Qt.size(Math.max(96, Math.round(width / 4)),
-                                Math.max(96, Math.round(height / 4)))
-            visible: source.toString() !== ""
-            opacity: status === Image.Ready ? 1 : 0
+            visible: root._immersiveBg || opacity > 0
+            opacity: root._immersiveBg ? 1 : 0
             Behavior on opacity { NumberAnimation { duration: 400 } }
 
-            // 沉浸模糊（纹理同步降采样，模糊观感保持一致）
-            layer.enabled: true
-            layer.textureSize: Qt.size(Math.max(1, Math.round(width / 4)),
-                                       Math.max(1, Math.round(height / 4)))
-            layer.effect: MultiEffect {
-                blurEnabled: true
-                blur: 1.0       // 模糊强度（最大）
-                blurMax: 16     // 纹理降至 1/4，半径同比缩小以保持原有模糊观感
-            }
-        }
+            // 放大的封面图作为沉浸背景的模糊纹理源
+            Image {
+                id: bgCover
+                anchors.fill: parent
+                source: (typeof musicManager !== "undefined" && musicManager) ? (musicManager.currentCover || "") : ""
+                fillMode: Image.PreserveAspectCrop
+                asynchronous: true
+                // 沉浸背景内存优化：背景会被强模糊，视觉上无需全分辨率
+                // sourceSize 限制封面解码尺寸；layer.textureSize 将模糊渲染纹理降至 1/4（显存占用约降为 1/16）
+                sourceSize: Qt.size(Math.max(96, Math.round(width / 4)),
+                                    Math.max(96, Math.round(height / 4)))
+                visible: source.toString() !== ""
+                opacity: status === Image.Ready ? 1 : 0
+                Behavior on opacity { NumberAnimation { duration: 400 } }
 
-        // 主色调染色层：用 C++ 端从封面提取的主色调为背景染色（取色）
-        // 切歌时颜色平滑过渡，无封面时回退到默认深灰
-        Rectangle {
-            anchors.fill: parent
-            color: {
-                var c = (typeof musicManager !== "undefined" && musicManager)
-                        ? (musicManager.currentCoverColor || "") : ""
-                return c !== "" ? c : "#1E1E1E"
+                // 沉浸模糊（纹理同步降采样，模糊观感保持一致）
+                layer.enabled: true
+                layer.textureSize: Qt.size(Math.max(1, Math.round(width / 4)),
+                                           Math.max(1, Math.round(height / 4)))
+                layer.effect: MultiEffect {
+                    blurEnabled: true
+                    blur: 1.0       // 模糊强度（最大）
+                    blurMax: 16     // 纹理降至 1/4，半径同比缩小以保持原有模糊观感
+                }
             }
-            opacity: 0.65
-            Behavior on color { ColorAnimation { duration: 600 } }
-        }
 
-        // 深色压暗遮罩：保证前景歌词与按钮可读
-        Rectangle {
-            anchors.fill: parent
-            color: "#1E1E1E"
-            opacity: 0.35
+            // 主色调染色层：用 C++ 端从封面提取的主色调为背景染色（取色）
+            // 切歌时颜色平滑过渡，无封面时回退到默认深灰
+            Rectangle {
+                anchors.fill: parent
+                color: {
+                    var c = (typeof musicManager !== "undefined" && musicManager)
+                            ? (musicManager.currentCoverColor || "") : ""
+                    return c !== "" ? c : "#1E1E1E"
+                }
+                opacity: 0.65
+                Behavior on color { ColorAnimation { duration: 600 } }
+            }
+
+            // 深色压暗遮罩：保证前景歌词与按钮可读
+            Rectangle {
+                anchors.fill: parent
+                color: "#1E1E1E"
+                opacity: 0.35
+            }
         }
     }
 

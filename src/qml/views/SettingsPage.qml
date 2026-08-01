@@ -781,6 +781,76 @@ Rectangle {
 
         Item { Layout.preferredHeight: 14 }
 
+        // 播放背景
+        Rectangle {
+            Layout.fillWidth: true; Layout.maximumWidth: 520
+            Layout.preferredHeight: 150; radius: 8
+            color: "#222222"; border.color: "#3A3A3A"
+
+            ColumnLayout {
+                anchors.fill: parent; anchors.margins: 20; spacing: 12
+
+                Label {
+                    text: "播放背景"
+                    font.family: fontFamily; font.pixelSize: 15; color: "#ffffff"
+                }
+
+                // 两种背景模式
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 10
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 40; radius: 8
+                        color: bgDarkMA.containsMouse ? "#3a3a3a"
+                              : (musicManager.playbackBackground === 0 ? "#3B82F6" : "#2a2a2a")
+                        border.color: musicManager.playbackBackground === 0 ? "#3B82F6" : "#3A3A3A"
+                        Label {
+                            anchors.centerIn: parent
+                            text: "深色背景"
+                            font.family: fontFamily; font.pixelSize: 14
+                            color: musicManager.playbackBackground === 0 ? "#ffffff" : "#bbbbbb"
+                        }
+                        MouseArea {
+                            id: bgDarkMA
+                            anchors.fill: parent; hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: musicManager.playbackBackground = 0
+                        }
+                    }
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 40; radius: 8
+                        color: bgImmersiveMA.containsMouse ? "#3a3a3a"
+                              : (musicManager.playbackBackground === 1 ? "#3B82F6" : "#2a2a2a")
+                        border.color: musicManager.playbackBackground === 1 ? "#3B82F6" : "#3A3A3A"
+                        Label {
+                            anchors.centerIn: parent
+                            text: "沉浸背景"
+                            font.family: fontFamily; font.pixelSize: 14
+                            color: musicManager.playbackBackground === 1 ? "#ffffff" : "#bbbbbb"
+                        }
+                        MouseArea {
+                            id: bgImmersiveMA
+                            anchors.fill: parent; hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: musicManager.playbackBackground = 1
+                        }
+                    }
+                }
+
+                Label {
+                    text: "沉浸背景可能比较占用性能，默认/歌曲无封面将使用深色背景"
+                    font.family: fontFamily; font.pixelSize: 11; color: "#777777"
+                    wrapMode: Text.WordWrap; Layout.fillWidth: true
+                }
+            }
+        }
+
+        Item { Layout.preferredHeight: 14 }
+
         // 关闭窗口行为
         Rectangle {
             Layout.fillWidth: true; Layout.maximumWidth: 520

@@ -41,6 +41,7 @@ class MusicManager : public QObject
     Q_PROPERTY(int playlistSource READ playlistSource WRITE setPlaylistSource NOTIFY playlistSourceChanged)
     Q_PROPERTY(bool trackCrossSource READ trackCrossSource WRITE setTrackCrossSource NOTIFY trackCrossSourceChanged)
     Q_PROPERTY(bool minimizeToTray READ minimizeToTray WRITE setMinimizeToTray NOTIFY minimizeToTrayChanged)
+    Q_PROPERTY(int playbackBackground READ playbackBackground WRITE setPlaybackBackground NOTIFY playbackBackgroundChanged)
     Q_PROPERTY(qreal volume READ volume WRITE setVolume NOTIFY volumeChanged)
 
     // ---- 自定义播放列表 ----
@@ -136,6 +137,10 @@ public:
     bool minimizeToTray() const { return m_minimizeToTray; }
     void setMinimizeToTray(bool v);
 
+    // ---- 播放背景 ----
+    int playbackBackground() const { return m_playbackBackground; }
+    void setPlaybackBackground(int v);
+
     // ---- 播放列表操作 ----
     Q_INVOKABLE void addToPlaylist(const QVariantMap &track);     // 追加单曲到播放列表
     Q_INVOKABLE void removeFromPlaylist(const QVariantMap &track); // 按路径从播放队列删除
@@ -203,6 +208,7 @@ signals:
     void playlistSourceChanged();
     void trackCrossSourceChanged();
     void minimizeToTrayChanged();
+    void playbackBackgroundChanged();
     void volumeChanged();
     void customPlaylistsChanged();
     void playingListIndexChanged();
@@ -256,6 +262,7 @@ private:
     int m_playlistSource = 0;       // 活跃播放列表来源 (SourcePlaylist=0)
     bool m_trackCrossSource = false; // 跨来源播放跟踪（默认关闭）
     bool m_minimizeToTray = false;
+    int m_playbackBackground = 0;   // 播放背景 (0=深色背景, 1=沉浸背景)
     qreal m_volume = 0.9;
     QVariantList m_customPlaylists;         // 自定义播放列表
     int m_playingListIndex = -1;            // -1=无, 0=库, 1=收藏, 2=历史, 3+n=自定义

@@ -419,6 +419,10 @@ void MusicManager::loadSettings() {
         m_minimizeToTray = obj.value("minimizeToTray").toBool(false);
         emit minimizeToTrayChanged();
     }
+    if (obj.contains("playbackBackground")) {
+        m_playbackBackground = obj.value("playbackBackground").toInt(0);
+        emit playbackBackgroundChanged();
+    }
     if (obj.contains("volume")) {
         m_volume = obj.value("volume").toDouble(m_volume);
         emit volumeChanged();
@@ -437,6 +441,7 @@ void MusicManager::saveSettings() {
     obj["volumeMenuOpacity"] = m_volumeMenuOpacity;
     obj["trackCrossSource"] = m_trackCrossSource;
     obj["minimizeToTray"] = m_minimizeToTray;
+    obj["playbackBackground"] = m_playbackBackground;
     obj["volume"] = m_volume;
     QJsonDocument doc(obj);
     QFile file(m_cacheDir + "/settings.json");
@@ -489,6 +494,13 @@ void MusicManager::setMinimizeToTray(bool v) {
     if (v == m_minimizeToTray) return;
     m_minimizeToTray = v;
     emit minimizeToTrayChanged();
+    saveSettings();
+}
+
+void MusicManager::setPlaybackBackground(int v) {
+    if (v < 0 || v > 1 || v == m_playbackBackground) return;
+    m_playbackBackground = v;
+    emit playbackBackgroundChanged();
     saveSettings();
 }
 
