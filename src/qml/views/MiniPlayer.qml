@@ -34,8 +34,8 @@ Window {
     readonly property string _font: miniFont.name || fontFamily
 
     // ============================================================
-    // 背景：封面取色 + 毛玻璃（与播放详情页一致）
-    // 四层叠加：兜底深色 → 放大封面 + MultiEffect 毛玻璃模糊（纹理）
+    // 背景：沉浸背景（与播放详情页一致）
+    // 四层叠加：兜底深色 → 放大封面 + MultiEffect 模糊纹理（沉浸）
     //          → C++ 端提取的封面主色调半透明染色（取色）+ 深色压暗保证文字可读
     // 每层自带 radius: 8，对齐外层圆角
     // ============================================================
@@ -47,23 +47,29 @@ Window {
         color: "#181818"
     }
 
-    // 放大的封面图作为毛玻璃纹理源
+    // 放大的封面图作为沉浸背景的模糊纹理源
     Image {
         id: bgCover
         anchors.fill: parent
         source: (typeof musicManager !== "undefined" && musicManager) ? (musicManager.currentCover || "") : ""
         fillMode: Image.PreserveAspectCrop
         asynchronous: true
+        // 沉浸背景内存优化：背景会被强模糊，视觉上无需全分辨率
+        // sourceSize 限制封面解码尺寸；layer.textureSize 将模糊渲染纹理降至 1/4（显存占用约降为 1/16）
+        sourceSize: Qt.size(Math.max(96, Math.round(width / 4)),
+                            Math.max(96, Math.round(height / 4)))
         visible: source.toString() !== ""
         opacity: status === Image.Ready ? 1 : 0
         Behavior on opacity { NumberAnimation { duration: 400 } }
 
-        // 同时启用模糊（毛玻璃）和 mask（圆角裁剪到 8px）
+        // 同时启用模糊（沉浸）和 mask（圆角裁剪到 8px），纹理同步降采样
         layer.enabled: true
+        layer.textureSize: Qt.size(Math.max(1, Math.round(width / 4)),
+                                   Math.max(1, Math.round(height / 4)))
         layer.effect: MultiEffect {
             blurEnabled: true
             blur: 1.0
-            blurMax: 64
+            blurMax: 16     // 纹理降至 1/4，半径同比缩小以保持原有模糊观感
             maskEnabled: true
             maskSource: ShaderEffectSource {
                 sourceItem: Rectangle {

@@ -122,7 +122,7 @@ Item {
     onVisibleChanged: {
         if (visible) {
             opening = true
-            openAnim.start() // 直接启动动画，不再等待毛玻璃渲染
+            openAnim.start() // 直接启动动画，不再等待沉浸背景渲染
         } else {
             openAnim.stop()
             closeAnim.stop()
@@ -218,8 +218,8 @@ Item {
     }
 
     // ============================================================
-    // 背景：封面取色 + 毛玻璃效果
-    // 三层叠加：兜底深色 → 放大封面 + MultiEffect 毛玻璃模糊（纹理）
+    // 背景：沉浸背景（封面取色 + 模糊）
+    // 四层叠加：兜底深色 → 放大封面 + MultiEffect 模糊纹理（沉浸）
     //          → C++ 端提取的封面主色调半透明染色（取色）+ 深色压暗保证文字可读
     // ============================================================
     Item {
@@ -234,23 +234,29 @@ Item {
             color: "#1E1E1E"
         }
 
-        // 放大的封面图作为毛玻璃纹理源
+        // 放大的封面图作为沉浸背景的模糊纹理源
         Image {
             id: bgCover
             anchors.fill: parent
             source: (typeof musicManager !== "undefined" && musicManager) ? (musicManager.currentCover || "") : ""
             fillMode: Image.PreserveAspectCrop
             asynchronous: true
+            // 沉浸背景内存优化：背景会被强模糊，视觉上无需全分辨率
+            // sourceSize 限制封面解码尺寸；layer.textureSize 将模糊渲染纹理降至 1/4（显存占用约降为 1/16）
+            sourceSize: Qt.size(Math.max(96, Math.round(width / 4)),
+                                Math.max(96, Math.round(height / 4)))
             visible: source.toString() !== ""
             opacity: status === Image.Ready ? 1 : 0
             Behavior on opacity { NumberAnimation { duration: 400 } }
 
-            // 毛玻璃模糊
+            // 沉浸模糊（纹理同步降采样，模糊观感保持一致）
             layer.enabled: true
+            layer.textureSize: Qt.size(Math.max(1, Math.round(width / 4)),
+                                       Math.max(1, Math.round(height / 4)))
             layer.effect: MultiEffect {
                 blurEnabled: true
                 blur: 1.0       // 模糊强度（最大）
-                blurMax: 64     // 模糊半径上限（像素），越大越柔和
+                blurMax: 16     // 纹理降至 1/4，半径同比缩小以保持原有模糊观感
             }
         }
 
