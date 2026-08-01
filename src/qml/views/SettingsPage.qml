@@ -436,6 +436,57 @@ Rectangle {
 
         Item { Layout.preferredHeight: 14 }
 
+        // 音频输出模式（WASAPI 独占/共享）
+        Rectangle {
+            Layout.fillWidth: true; Layout.maximumWidth: 520
+            Layout.preferredHeight: 130; radius: 8
+            color: "#222222"; border.color: "#3A3A3A"
+
+            ColumnLayout {
+                anchors.fill: parent; anchors.leftMargin: 20; anchors.rightMargin: 20; anchors.topMargin: 12; anchors.bottomMargin: 20; spacing: 10
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    Label { text: "WASAPI 独占模式"; font.family: fontFamily; font.pixelSize: 15; color: "#ffffff" }
+                    Item { Layout.fillWidth: true }
+                    Switch {
+                        Layout.alignment: Qt.AlignVCenter
+                        checked: musicManager.wasapiExclusive || false
+                        onToggled: musicManager.wasapiExclusive = checked
+
+                        indicator: Rectangle {
+                            implicitWidth: 38
+                            implicitHeight: 22
+                            x: parent.leftPadding
+                            y: parent.topPadding + (parent.availableHeight - height) / 2
+                            radius: 11
+                            color: parent.checked ? "#3B82F6" : "#555"
+                            border.color: parent.checked ? "#3B82F6" : "#444"
+                            Behavior on color { ColorAnimation { duration: 150 } }
+
+                            Rectangle {
+                                x: parent.checked ? parent.width - width - 2 : 2
+                                y: (parent.height - height) / 2
+                                width: 18; height: 18; radius: 9
+                                color: "#fff"
+                                Behavior on x { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
+                            }
+                        }
+                    }
+                }
+
+                Label {
+                    text: musicManager.wasapiExclusive
+                          ? "已开启：独占音频输出设备，延迟更低、音质更稳定，但其他应用将无法使用该设备发声。若设备被其他程序占用，将自动回退共享模式。"
+                          : "关闭时使用共享模式（默认），可与其他应用同时发声。切换后立即生效并自动恢复播放。"
+                    font.family: fontFamily; font.pixelSize: 11; color: "#777777"
+                    wrapMode: Text.WordWrap; Layout.fillWidth: true
+                }
+            }
+        }
+
+        Item { Layout.preferredHeight: 14 }
+
         // 跨来源跟踪开关
         Rectangle {
             Layout.fillWidth: true; Layout.maximumWidth: 520

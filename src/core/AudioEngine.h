@@ -7,6 +7,8 @@
 
 struct ma_engine;
 struct ma_sound;
+struct ma_context;
+struct ma_device;
 
 class AudioEngine : public QObject
 {
@@ -27,6 +29,10 @@ public:
     float volume() const;
     bool isPlaying() const;
 
+    // WASAPI 输出模式：true=独占, false=共享（默认）。切换时重建引擎并保留播放现场
+    bool exclusive() const { return m_exclusive; }
+    bool setExclusiveMode(bool exclusive);
+
 signals:
     void positionChanged(qint64 ms);
     void playbackStateChanged();
@@ -37,9 +43,19 @@ private:
     void pollAudio();
     void retryLoad();
 
+    // 设备回调：驱动引擎混音输出（ma_engine_data_callback 为内部静态函数，这里等价实现）
+    static void deviceDataCallback(ma_device *pDevice, void *pFramesOut,
+                                   const void *pFramesIn, unsigned int frameCount);
+
+    bool initAudioDevice();    // 按 m_exclusive 创建 context/device/engine
+    void shutdownAudioDevice(); // 逆序销毁 sound/engine/device/context
+
+    ma_context *m_context = nullptr;
+    ma_device *m_device = nullptr;
     ma_engine *m_engine = nullptr;
     ma_sound *m_sound = nullptr;
     bool m_soundInitialized = false;
+    bool m_exclusive = false;  // true=WASAPI 独占, false=共享
 
     QString m_currentFilePath;
     qint64 m_cachedDuration = 0;   // milliseconds

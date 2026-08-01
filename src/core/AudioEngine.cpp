@@ -11,15 +11,7 @@
 AudioEngine::AudioEngine(QObject *parent)
     : QObject(parent)
 {
-    m_engine = new ma_engine;
-    ma_engine_config config = ma_engine_config_init();
-
-    if (ma_engine_init(&config, m_engine) != MA_SUCCESS) {
-        qWarning("AudioEngine: Failed to initialize miniaudio engine");
-        delete m_engine;
-        m_engine = nullptr;
-        return;
-    }
+    initAudioDevice();
 
     m_sound = new ma_sound;
     std::memset(m_sound, 0, sizeof(*m_sound));
@@ -40,14 +32,148 @@ AudioEngine::AudioEngine(QObject *parent)
 AudioEngine::~AudioEngine()
 {
     m_retryTimer->stop();
+    shutdownAudioDevice();
+    delete m_sound;
+}
+
+// ---- 设备驱动回调：等价于 miniaudio 内部 ma_engine_data_callback ----
+void AudioEngine::deviceDataCallback(ma_device *pDevice, void *pFramesOut,
+                                     const void *pFramesIn, unsigned int frameCount)
+{
+    ma_engine *pEngine = static_cast<ma_engine *>(pDevice->pUserData);
+    (void)pFramesIn;
+    ma_engine_read_pcm_frames(pEngine, pFramesOut, frameCount, nullptr);
+}
+
+bool AudioEngine::initAudioDevice()
+{
+    if (m_engine) return true;
+
+    m_engine = new ma_engine;
+    m_context = new ma_context;
+    m_device = new ma_device;
+
+    ma_context_config contextConfig = ma_context_config_init();
+    if (ma_context_init(nullptr, 0, &contextConfig, m_context) != MA_SUCCESS) {
+        qWarning("AudioEngine: Failed to initialize miniaudio context");
+        goto on_fail;
+    }
+
+    // 设备：与引擎内部创建方式一致（f32、原生声道/采样率），仅额外指定 WASAPI 共享/独占模式
+    {
+        ma_device_config deviceConfig = ma_device_config_init(ma_device_type_playback);
+        deviceConfig.playback.format = ma_format_f32;
+        deviceConfig.playback.channels = 0;                    // 使用设备原生声道
+        deviceConfig.sampleRate = 0;                           // 使用设备原生采样率
+        deviceConfig.playback.shareMode = m_exclusive ? ma_share_mode_exclusive
+                                                      : ma_share_mode_shared;
+        deviceConfig.dataCallback = AudioEngine::deviceDataCallback;
+        deviceConfig.pUserData = m_engine;
+        deviceConfig.noPreSilencedOutputBuffer = MA_TRUE;      // 引擎总是写满输出帧
+        deviceConfig.noClip = MA_TRUE;                         // 削波由引擎自己处理
+
+        if (ma_device_init(m_context, &deviceConfig, m_device) != MA_SUCCESS) {
+            qWarning("AudioEngine: Failed to initialize device (exclusive=%d)", m_exclusive);
+            ma_context_uninit(m_context);
+            goto on_fail;
+        }
+    }
+
+    {
+        ma_engine_config config = ma_engine_config_init();
+        config.pContext = m_context;
+        config.pDevice = m_device;
+        if (ma_engine_init(&config, m_engine) != MA_SUCCESS) {
+            qWarning("AudioEngine: Failed to initialize miniaudio engine");
+            ma_device_uninit(m_device);
+            ma_context_uninit(m_context);
+            goto on_fail;
+        }
+    }
+
+    if (m_exclusive)
+        qDebug("AudioEngine: WASAPI exclusive mode enabled");
+    return true;
+
+on_fail:
+    delete m_device;
+    delete m_context;
+    delete m_engine;
+    m_device = nullptr;
+    m_context = nullptr;
+    m_engine = nullptr;
+    return false;
+}
+
+void AudioEngine::shutdownAudioDevice()
+{
     if (m_soundInitialized && m_sound) {
         ma_sound_stop(m_sound);
         ma_sound_uninit(m_sound);
+        std::memset(m_sound, 0, sizeof(*m_sound));
+        m_soundInitialized = false;
     }
-    delete m_sound;
-    if (m_engine)
+    m_wasPlaying = false;
+
+    if (m_engine) {
         ma_engine_uninit(m_engine);
-    delete m_engine;
+        delete m_engine;
+        m_engine = nullptr;
+    }
+    if (m_device) {
+        ma_device_uninit(m_device);
+        delete m_device;
+        m_device = nullptr;
+    }
+    if (m_context) {
+        ma_context_uninit(m_context);
+        delete m_context;
+        m_context = nullptr;
+    }
+}
+
+bool AudioEngine::setExclusiveMode(bool exclusive)
+{
+    if (exclusive == m_exclusive) return true;
+
+    // 保存当前播放现场（含热插拔状态）
+    const bool wasPlaying = isPlaying();
+    const qint64 pos = position();
+    const QString path = !m_currentFilePath.isEmpty() ? m_currentFilePath : m_hotplugFilePath;
+    const qint64 dur = m_cachedDuration;
+
+    m_retryTimer->stop();
+    m_hotplugMode = false;
+
+    // 重建音频引擎（切换共享/独占）
+    shutdownAudioDevice();
+    m_exclusive = exclusive;
+    if (!initAudioDevice()) {
+        // 独占不可用（如设备被其他程序独占），回退共享模式
+        qWarning("AudioEngine: exclusive mode unavailable, falling back to shared mode");
+        m_exclusive = false;
+        initAudioDevice();
+    }
+    if (!m_engine) return false;
+
+    setVolume(m_volume);
+    emit playbackStateChanged();
+
+    // 恢复播放现场
+    if (path.isEmpty()) return true;
+    if (!load(path)) {
+        // 文件暂不可用（如设备切换期间被拔出）：保留现场进入热插拔重试
+        m_hotplugMode = true;
+        m_hotplugFilePath = path;
+        m_hotplugPosition = pos;
+        m_hotplugWasPlaying = wasPlaying;
+        m_hotplugDuration = dur;
+        m_retryTimer->start();
+        return true;
+    }
+    if (pos > 0) seek(pos);
+    if (wasPlaying) play();
+    return true;
 }
 
 bool AudioEngine::load(const QString &filePath)

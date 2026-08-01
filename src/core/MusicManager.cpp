@@ -429,6 +429,12 @@ void MusicManager::loadSettings() {
         if (m_audioEngine)
             m_audioEngine->setVolume(static_cast<float>(m_volume));
     }
+    if (obj.contains("wasapiExclusive")) {
+        m_wasapiExclusive = obj.value("wasapiExclusive").toBool(false);
+        if (m_audioEngine)
+            m_audioEngine->setExclusiveMode(m_wasapiExclusive);
+        emit wasapiExclusiveChanged();
+    }
 }
 
 void MusicManager::saveSettings() {
@@ -443,6 +449,7 @@ void MusicManager::saveSettings() {
     obj["minimizeToTray"] = m_minimizeToTray;
     obj["playbackBackground"] = m_playbackBackground;
     obj["volume"] = m_volume;
+    obj["wasapiExclusive"] = m_wasapiExclusive;
     QJsonDocument doc(obj);
     QFile file(m_cacheDir + "/settings.json");
     if (file.open(QIODevice::WriteOnly)) {
@@ -511,6 +518,21 @@ void MusicManager::setVolume(qreal vol) {
     if (m_audioEngine)
         m_audioEngine->setVolume(static_cast<float>(vol));
     emit volumeChanged();
+    saveSettings();
+}
+
+void MusicManager::setWasapiExclusive(bool v) {
+    if (v == m_wasapiExclusive) return;
+    m_wasapiExclusive = v;
+    emit wasapiExclusiveChanged();
+    bool applied = true;
+    if (m_audioEngine)
+        applied = m_audioEngine->setExclusiveMode(v);
+    if (!applied) {
+        // 独占模式不可用（如设备被占用），回退共享并同步 UI
+        m_wasapiExclusive = false;
+        emit wasapiExclusiveChanged();
+    }
     saveSettings();
 }
 

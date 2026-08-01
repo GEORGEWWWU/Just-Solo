@@ -43,6 +43,7 @@ class MusicManager : public QObject
     Q_PROPERTY(bool minimizeToTray READ minimizeToTray WRITE setMinimizeToTray NOTIFY minimizeToTrayChanged)
     Q_PROPERTY(int playbackBackground READ playbackBackground WRITE setPlaybackBackground NOTIFY playbackBackgroundChanged)
     Q_PROPERTY(qreal volume READ volume WRITE setVolume NOTIFY volumeChanged)
+    Q_PROPERTY(bool wasapiExclusive READ wasapiExclusive WRITE setWasapiExclusive NOTIFY wasapiExclusiveChanged)
 
     // ---- 自定义播放列表 ----
     Q_PROPERTY(QVariantList customPlaylists READ customPlaylists NOTIFY customPlaylistsChanged)
@@ -141,6 +142,10 @@ public:
     int playbackBackground() const { return m_playbackBackground; }
     void setPlaybackBackground(int v);
 
+    // ---- 音频输出模式（WASAPI 独占/共享） ----
+    bool wasapiExclusive() const { return m_wasapiExclusive; }
+    void setWasapiExclusive(bool v);
+
     // ---- 播放列表操作 ----
     Q_INVOKABLE void addToPlaylist(const QVariantMap &track);     // 追加单曲到播放列表
     Q_INVOKABLE void removeFromPlaylist(const QVariantMap &track); // 按路径从播放队列删除
@@ -210,6 +215,7 @@ signals:
     void minimizeToTrayChanged();
     void playbackBackgroundChanged();
     void volumeChanged();
+    void wasapiExclusiveChanged();
     void customPlaylistsChanged();
     void playingListIndexChanged();
     void positionChanged(qint64 ms);
@@ -264,6 +270,7 @@ private:
     bool m_minimizeToTray = false;
     int m_playbackBackground = 0;   // 播放背景 (0=深色背景, 1=沉浸背景)
     qreal m_volume = 0.9;
+    bool m_wasapiExclusive = false; // 音频输出模式: false=共享(默认), true=WASAPI 独占
     QVariantList m_customPlaylists;         // 自定义播放列表
     int m_playingListIndex = -1;            // -1=无, 0=库, 1=收藏, 2=历史, 3+n=自定义
     void loadSettings();
